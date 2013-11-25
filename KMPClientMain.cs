@@ -99,7 +99,10 @@ namespace KMP
         public static byte inactiveShipsPerUpdate = 0;
         public static ScreenshotSettings screenshotSettings = new ScreenshotSettings();
 		public static Dictionary<String, String[]> favorites = new Dictionary<String, String[]>();
-
+		
+		//ModChecking
+		public static Dictionary<string, string> hashes = new Dictionary<string, string>();
+		
         //Connection
         public static int clientID;
         public static bool endSession;
@@ -252,14 +255,37 @@ namespace KMP
             writeConfigFile();
         }
         
+        private static string doHashMD5(MD5 md5, byte[] tohash)
+        {
+        	byte[] hashed = md5.ComputeHash(tohash);
+
+            StringBuilder sBuilder = new StringBuilder();
+
+            // Loop through each byte of the hashed data  
+            // and format each one as a hexadecimal string. 
+            for (int i = 0; i < hashed.Length; i++)
+            {
+                sBuilder.Append(hashed[i].ToString("x2"));
+            }
+			
+            return sBuilder.ToString();
+        }
+        
         public static void ModCheck()
         {
-        	//MD5 md5 = MD5.Create();
+        	MD5 md5 = MD5.Create();
         	string path = getKMPDirectory() + "\\..\\..\\"; //returns full path to KMP\Plugins
         	string[] ls = System.IO.Directory.GetFiles(path, "*.*", System.IO.SearchOption.AllDirectories);
-        	foreach(string file in ls)
-        	{
-        		Log.Info(file);
+        	string hash;
+        	if(hashes.Count == 0) //if hashes not yet generated
+        	{ 
+	        	foreach(string file in ls)
+	        	{
+	        		var contents = System.IO.File.ReadAllBytes(file);
+	        		hash = doHashMD5(md5, contents);
+	        		//Log.Info(file + " " + hash);
+	        		hashes.Add(file, hash);
+	        	}
         	}
         }
 
@@ -1672,100 +1698,6 @@ namespace KMP
 
         }
 
-
-        //Reads the parts list file
-        private static void readPartsList()
-        {
-            try
-            {
-                //Get the part list if available
-                KSP.IO.TextReader reader = KSP.IO.File.OpenText<KMPClientMain>(PART_LIST_FILENAME);
-                List<string> lines = new List<string>();
-                while (!reader.EndOfStream)
-                {
-                    lines.Add(reader.ReadLine());
-                }
-                reader.Close();
-                partList = lines;
-
-                bool changed = false;
-                if (!lines.Contains("kerbalEVA"))
-                {
-                    partList.Add("kerbalEVA");
-                    changed = true;
-                }
-                if (!lines.Contains("flag"))
-                {
-                    partList.Add("flag");
-                    changed = true;
-                }
-                if (changed)
-                {
-                    KSP.IO.TextWriter writer = KSP.IO.File.CreateText<KMPClientMain>(PART_LIST_FILENAME);
-                    foreach (string part in partList)
-                        writer.WriteLine(part);
-                    writer.Close();
-                }
-            }
-            catch (Exception e)
-            {
-                KMP.Log.Debug("Exception thrown in readPartsList(), catch 1, Exception: {0}", e.ToString());
-                //Generate the stock part list
-                partList = new List<string>();
-
-                //0.21 (& below) parts
-                partList.Add("StandardCtrlSrf"); partList.Add("CanardController"); partList.Add("noseCone"); partList.Add("AdvancedCanard"); partList.Add("airplaneTail");
-                partList.Add("deltaWing"); partList.Add("noseConeAdapter"); partList.Add("rocketNoseCone"); partList.Add("smallCtrlSrf"); partList.Add("standardNoseCone");
-                partList.Add("sweptWing"); partList.Add("tailfin"); partList.Add("wingConnector"); partList.Add("winglet"); partList.Add("R8winglet");
-                partList.Add("winglet3"); partList.Add("Mark1Cockpit"); partList.Add("Mark2Cockpit"); partList.Add("Mark1-2Pod"); partList.Add("advSasModule");
-                partList.Add("asasmodule1-2"); partList.Add("avionicsNoseCone"); partList.Add("crewCabin"); partList.Add("cupola"); partList.Add("landerCabinSmall");
-
-                partList.Add("mark3Cockpit"); partList.Add("mk1pod"); partList.Add("mk2LanderCabin"); partList.Add("probeCoreCube"); partList.Add("probeCoreHex");
-                partList.Add("probeCoreOcto"); partList.Add("probeCoreOcto2"); partList.Add("probeCoreSphere"); partList.Add("probeStackLarge"); partList.Add("probeStackSmall");
-                partList.Add("sasModule"); partList.Add("seatExternalCmd"); partList.Add("rtg"); partList.Add("batteryBank"); partList.Add("batteryBankLarge");
-                partList.Add("batteryBankMini"); partList.Add("batteryPack"); partList.Add("ksp.r.largeBatteryPack"); partList.Add("largeSolarPanel"); partList.Add("solarPanels1");
-                partList.Add("solarPanels2"); partList.Add("solarPanels3"); partList.Add("solarPanels4"); partList.Add("solarPanels5"); partList.Add("JetEngine");
-
-                partList.Add("engineLargeSkipper"); partList.Add("ionEngine"); partList.Add("liquidEngine"); partList.Add("liquidEngine1-2"); partList.Add("liquidEngine2");
-                partList.Add("liquidEngine2-2"); partList.Add("liquidEngine3"); partList.Add("liquidEngineMini"); partList.Add("microEngine"); partList.Add("nuclearEngine");
-                partList.Add("radialEngineMini"); partList.Add("radialLiquidEngine1-2"); partList.Add("sepMotor1"); partList.Add("smallRadialEngine"); partList.Add("solidBooster");
-                partList.Add("solidBooster1-1"); partList.Add("toroidalAerospike"); partList.Add("turboFanEngine"); partList.Add("MK1Fuselage"); partList.Add("Mk1FuselageStructural");
-                partList.Add("RCSFuelTank"); partList.Add("RCSTank1-2"); partList.Add("rcsTankMini"); partList.Add("rcsTankRadialLong"); partList.Add("fuelTank");
-
-                partList.Add("fuelTank1-2"); partList.Add("fuelTank2-2"); partList.Add("fuelTank3-2"); partList.Add("fuelTank4-2"); partList.Add("fuelTankSmall");
-                partList.Add("fuelTankSmallFlat"); partList.Add("fuelTank.long"); partList.Add("miniFuelTank"); partList.Add("mk2Fuselage"); partList.Add("mk2SpacePlaneAdapter");
-                partList.Add("mk3Fuselage"); partList.Add("mk3spacePlaneAdapter"); partList.Add("radialRCSTank"); partList.Add("toroidalFuelTank"); partList.Add("xenonTank");
-                partList.Add("xenonTankRadial"); partList.Add("adapterLargeSmallBi"); partList.Add("adapterLargeSmallQuad"); partList.Add("adapterLargeSmallTri"); partList.Add("adapterSmallMiniShort");
-                partList.Add("adapterSmallMiniTall"); partList.Add("nacelleBody"); partList.Add("radialEngineBody"); partList.Add("smallHardpoint"); partList.Add("stationHub");
-
-                partList.Add("structuralIBeam1"); partList.Add("structuralIBeam2"); partList.Add("structuralIBeam3"); partList.Add("structuralMiniNode"); partList.Add("structuralPanel1");
-                partList.Add("structuralPanel2"); partList.Add("structuralPylon"); partList.Add("structuralWing"); partList.Add("strutConnector"); partList.Add("strutCube");
-                partList.Add("strutOcto"); partList.Add("trussAdapter"); partList.Add("trussPiece1x"); partList.Add("trussPiece3x"); partList.Add("CircularIntake");
-                partList.Add("landingLeg1"); partList.Add("landingLeg1-2"); partList.Add("RCSBlock"); partList.Add("stackDecoupler"); partList.Add("airScoop");
-                partList.Add("commDish"); partList.Add("decoupler1-2"); partList.Add("dockingPort1"); partList.Add("dockingPort2"); partList.Add("dockingPort3");
-
-                partList.Add("dockingPortLarge"); partList.Add("dockingPortLateral"); partList.Add("fuelLine"); partList.Add("ladder1"); partList.Add("largeAdapter");
-                partList.Add("largeAdapter2"); partList.Add("launchClamp1"); partList.Add("linearRcs"); partList.Add("longAntenna"); partList.Add("miniLandingLeg");
-                partList.Add("parachuteDrogue"); partList.Add("parachuteLarge"); partList.Add("parachuteRadial"); partList.Add("parachuteSingle"); partList.Add("radialDecoupler");
-                partList.Add("radialDecoupler1-2"); partList.Add("radialDecoupler2"); partList.Add("ramAirIntake"); partList.Add("roverBody"); partList.Add("sensorAccelerometer");
-                partList.Add("sensorBarometer"); partList.Add("sensorGravimeter"); partList.Add("sensorThermometer"); partList.Add("spotLight1"); partList.Add("spotLight2");
-
-                partList.Add("stackBiCoupler"); partList.Add("stackDecouplerMini"); partList.Add("stackPoint1"); partList.Add("stackQuadCoupler"); partList.Add("stackSeparator");
-                partList.Add("stackSeparatorBig"); partList.Add("stackSeparatorMini"); partList.Add("stackTriCoupler"); partList.Add("telescopicLadder"); partList.Add("telescopicLadderBay");
-                partList.Add("SmallGearBay"); partList.Add("roverWheel1"); partList.Add("roverWheel2"); partList.Add("roverWheel3"); partList.Add("wheelMed"); partList.Add("flag");
-                partList.Add("kerbalEVA");
-
-                //0.22 parts
-                partList.Add("mediumDishAntenna"); partList.Add("GooExperiment"); partList.Add("science.module");
-
-                //Write to disk
-                KSP.IO.TextWriter writer = KSP.IO.File.CreateText<KMPClientMain>(PART_LIST_FILENAME);
-                foreach (string part in partList)
-                    writer.WriteLine(part);
-                writer.Close();
-            }
-        }
-
         // Reads the player's token (GUID)
         private static void readTokenFile()
         {
@@ -1855,7 +1787,7 @@ namespace KMP
             }
 
             readTokenFile();
-            readPartsList();
+            //readPartsList(); now server sided
         }
 
         static void writeConfigFile()

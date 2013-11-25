@@ -3760,7 +3760,7 @@ namespace KMP
 					{
 						KMPClientMain.SetMessage("");
 						KMPClientMain.SetServer(KMPConnectionDisplay.activeHostname);
-						KMPClientMain.ModCheck();
+						//KMPClientMain.ModCheck();
 						KMPClientMain.Connect();
 					}
 					
