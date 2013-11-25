@@ -1,4 +1,4 @@
-﻿//#define DEBUG_OUT
+//#define DEBUG_OUT
 //#define SEND_UPDATES_TO_SENDER
 
 using System;
@@ -51,9 +51,11 @@ namespace KMPServer
         public const String SCREENSHOT_DIR = "KMPScreenshots";
         public const string DB_FILE_CONN = "Data Source=KMP_universe.db";
         public const string DB_FILE = "KMP_universe.db";
-        public const String PART_LIST_FILENAME = "KMPPartList.txt";
+        public const string PART_LIST_FILENAME = "KMPPartList.txt";
+        public const string MD5_FILE = "KMPModControl.txt";
         
         public static List<string> partList = new List<string>();
+        public static Dictionary<string, string> md5list = new Dictionary<string, string>(); //path:md5
 
         public const int UNIVERSE_VERSION = 3;
 
@@ -314,6 +316,34 @@ namespace KMPServer
             }
         }
         
+        private static void readMd5List()
+        {
+            try
+            {
+                //Get the part list if available
+                TextReader reader = File.OpenText(PART_LIST_FILENAME);
+                Dictionary<string, string> hashes = new Dictionary<string, string>();
+                while (reader.Peek() != -1)
+                {
+                	string line = reader.ReadLine();
+                	if(line[0] != '#')//allows commented lines
+                	{
+                		string[] splitline = line.Split(' ');
+                		hashes.Add(splitline[0], splitline[1]); //stores path:md5
+                	}
+                }
+                reader.Close();
+                md5list = hashes;
+            }
+            catch (Exception e)
+            {
+            	Log.Debug("Exception thrown in readMd5List(), catch 1, Exception: {0}", e.ToString());
+                TextWriter writer = File.CreateText(MD5_FILE);
+                writer.WriteLine("#example\n#MechJeb2\\Plugins\\MechJeb2.dll 64E6E05C88F3466C63EDACD5CF8E5919\n");
+                writer.Close();
+            }
+        }
+        
         public void saveScreenshot(byte[] bytes, String player)
         {
             if (!Directory.Exists(SCREENSHOT_DIR))
@@ -387,6 +417,8 @@ namespace KMPServer
 			//read part list for server sided mod support
 			Log.Info("Reading " + PART_LIST_FILENAME);
 			readPartsList();
+			Log.Info("Reading " + MD5_FILE);
+			readMd5List();
 			
             Log.Info("Hosting server on port {0} ...", settings.port);
 
