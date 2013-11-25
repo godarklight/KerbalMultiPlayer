@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Globalization;
+using System.Security.Cryptography;
 
 using System.Net;
 using System.Net.Sockets;
@@ -247,6 +248,12 @@ namespace KMP
             // Verification of change is handled in KMPManager
             favorites = newFavorites;
             writeConfigFile();
+        }
+        
+        public static void ModCheck()
+        {
+        	MD5 md5 = MD5.Create();
+        	string[] dir, files;
         }
 
         public static void Connect()
