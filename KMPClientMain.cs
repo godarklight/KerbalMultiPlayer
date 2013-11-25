@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Globalization;
+
 using System.Security.Cryptography;
+//using System.IO AS OF 0.21 THIS HAS BEEN REENABLED, WE DON'T NEED TO USE KSP.IO ANYMORE
 
 using System.Net;
 using System.Net.Sockets;
@@ -252,8 +254,13 @@ namespace KMP
         
         public static void ModCheck()
         {
-        	MD5 md5 = MD5.Create();
-        	string[] dir, files;
+        	//MD5 md5 = MD5.Create();
+        	string path = getKMPDirectory() + "\\..\\..\\"; //returns full path to KMP\Plugins
+        	string[] ls = System.IO.Directory.GetFiles(path, "*.*", System.IO.SearchOption.AllDirectories);
+        	foreach(string file in ls)
+        	{
+        		Log.Info(file);
+        	}
         }
 
         public static void Connect()
