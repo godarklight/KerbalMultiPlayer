@@ -55,6 +55,7 @@ namespace KMPServer
         
         public static List<string> partList = new List<string>();
         public static Dictionary<string, string> md5List = new Dictionary<string, string>(); //path:md5
+        public static List<string> resourceList = new List<string>();
         public static string resourceControlMode = "blacklist";
 
         public const int UNIVERSE_VERSION = 3;
@@ -284,6 +285,7 @@ namespace KMPServer
                 TextReader reader = File.OpenText(MOD_CONTROL_FILE);
                 Dictionary<string, string> hashes = new Dictionary<string, string>();
                 List<string> allowedparts = new List<string>();
+                List<string> resources = new List<string>();
                 string resourcemode = "blacklist";
                 while (reader.Peek() != -1)
                 {
@@ -310,7 +312,7 @@ namespace KMPServer
                 		}
                 		else if(readmode == "parts")
                 		{
-                			
+                			allowedparts.Add(line);
                 		}
                 		else if(readmode == "md5")
                 		{
@@ -318,20 +320,45 @@ namespace KMPServer
                 			hashes.Add(splitline[0], splitline[1]); //stores path:md5
                 		}
                 		else if(readmode == "resource"){
-                		
+                			resources.Add(line);
                 		}
                 	}
                 }
                 reader.Close();
                 md5List = hashes;
                 partList = allowedparts;
+                resourceList = resources;
                 resourceControlMode = resourcemode;
             }
             catch (Exception e)
             {
             	Log.Debug("Exception thrown in readMd5List(), catch 1, Exception: {0}", e.ToString());
                 TextWriter writer = File.CreateText(MOD_CONTROL_FILE);
+                writer.WriteLine("#You can comment by starting a line with a #, these are ignored by the server.");
+                writer.WriteLine("#Sections supported are md5, partslist, resource-blacklist and resource-whitelist.");
+                writer.WriteLine("#You cannot use both resource-blacklist AND resource-whitelist in the same file.");
+                writer.WriteLine("#resource-blacklist bans ONLY the files you specify whereas resource-whitelist bans ALL resources except those you specify.");
+                writer.WriteLine("#Each section has its own type of formatting. Examples have been given.");
+                writer.WriteLine("#Sections are defined as follows");
+                writer.WriteLine("!md5");
+                writer.WriteLine("#For the MD5 section, file paths are read from inside GameData. If a client's MD5 does not match, they will not be permitted entry.");
+                writer.WriteLine("#You may not specify multiple MD5s for the same file.");
+                writer.WriteLine("#[File Path] [MD5]");
+                writer.WriteLine("#Example: MechJeb2/Plugins/MechJeb2.dll 64E6E05C88F3466C63EDACD5CF8E5919");
+                writer.WriteLine("!resource-blacklist");
+                writer.WriteLine("#In this section you can specify the files to ban (or permit, if you change blacklist to whitelist).");
+                writer.WriteLine("#You do not need to specify a path, just a resource name.");
+                writer.WriteLine("#You can control any file from GameData here. It's prefered if you just specify the names of resources (as parts are controled by the partlist).");
+                writer.WriteLine("#[File]");
+                writer.WriteLine("#Example: MechJeb2.dll");
                 writer.WriteLine("!partslist");
+                writer.WriteLine("#This is a list of parts to allow users to put on their ships.");
+                writer.WriteLine("#If a part the client has doesn't appear on this list, they can still join the server but not use the part.");
+                writer.WriteLine("#The default stock parts have been added already for you.");
+                writer.WriteLine("#To add a mod part, add the name from the part's .cfg file. The name is the name from the PART{} section, where underscores are replaced with periods.");
+                writer.WriteLine("#[partname]");
+                writer.WriteLine("#Example: mumech.MJ2.Pod (NOTE: In the part.cfg this MechJeb2 pod is named mumech_MJ2_Pod. The _ have been replaced with .)");
+                writer.WriteLine("#You can use this application to generate partlists from a KSP installation if you want to add mod parts: http://forum.kerbalspaceprogram.com/threads/57284");
                 generatePartsList(writer);
                 writer.Close();
             }
