@@ -54,7 +54,8 @@ namespace KMPServer
         public const string MOD_CONTROL_FILE = "KMPModControl.txt";
         
         public static List<string> partList = new List<string>();
-        public static Dictionary<string, string> md5list = new Dictionary<string, string>(); //path:md5
+        public static Dictionary<string, string> md5List = new Dictionary<string, string>(); //path:md5
+        public static string resourceControlMode = "blacklist";
 
         public const int UNIVERSE_VERSION = 3;
 
@@ -283,6 +284,7 @@ namespace KMPServer
                 TextReader reader = File.OpenText(MOD_CONTROL_FILE);
                 Dictionary<string, string> hashes = new Dictionary<string, string>();
                 List<string> allowedparts = new List<string>();
+                string resourcemode = "blacklist";
                 while (reader.Peek() != -1)
                 {
                 	string line = reader.ReadLine();
@@ -297,8 +299,13 @@ namespace KMPServer
                 			else if(line.Contains("md5")){
                 				readmode = "md5";
                 			}
-                			else if(line.Contains("resources")){
+                			else if(line.Contains("resource-blacklist")){ //allow all resources EXCEPT these in file
                 				readmode = "resource";
+                				resourcemode = "blacklist";
+                			}
+                			else if(line.Contains("resource-whitelist")){ //allow NO resources EXCEPT these in file
+                				readmode = "resource";
+                				resourcemode = "whitelist";
                 			}
                 		}
                 		else if(readmode == "parts")
@@ -316,8 +323,9 @@ namespace KMPServer
                 	}
                 }
                 reader.Close();
-                md5list = hashes;
+                md5List = hashes;
                 partList = allowedparts;
+                resourceControlMode = resourcemode;
             }
             catch (Exception e)
             {
