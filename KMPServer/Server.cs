@@ -51,8 +51,7 @@ namespace KMPServer
         public const String SCREENSHOT_DIR = "KMPScreenshots";
         public const string DB_FILE_CONN = "Data Source=KMP_universe.db";
         public const string DB_FILE = "KMP_universe.db";
-        public const string PART_LIST_FILENAME = "KMPPartList.txt";
-        public const string MD5_FILE = "KMPModControl.txt";
+        public const string MOD_CONTROL_FILE = "KMPModControl.txt";
         
         public static List<string> partList = new List<string>();
         public static Dictionary<string, string> md5list = new Dictionary<string, string>(); //path:md5
@@ -224,43 +223,8 @@ namespace KMPServer
             startDatabase();
         }
         
-		private static void readPartsList()
+		private static void generatePartsList(TextWriter writer)
         {
-            try
-            {
-                //Get the part list if available
-                TextReader reader = File.OpenText(PART_LIST_FILENAME);
-                List<string> lines = new List<string>();
-                while (reader.Peek() != -1)
-                {
-                    lines.Add(reader.ReadLine());
-                }
-                reader.Close();
-                partList = lines;
-
-                bool changed = false;
-                if (!lines.Contains("kerbalEVA"))
-                {
-                    partList.Add("kerbalEVA");
-                    changed = true;
-                }
-                if (!lines.Contains("flag"))
-                {
-                    partList.Add("flag");
-                    changed = true;
-                }
-                if (changed)
-                {
-                    TextWriter writer = File.CreateText(PART_LIST_FILENAME);
-                    foreach (string part in partList)
-                        writer.WriteLine(part);
-                    writer.Close();
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Debug("Exception thrown in readPartsList(), catch 1, Exception: {0}", e.ToString());
-                //Generate the stock part list
                 partList = new List<string>();
 
                 //0.21 (& below) parts
@@ -308,38 +272,59 @@ namespace KMPServer
                 //0.22 parts
                 partList.Add("mediumDishAntenna"); partList.Add("GooExperiment"); partList.Add("science.module");
 
-                //Write to disk
-                TextWriter writer = File.CreateText(PART_LIST_FILENAME);
-                foreach (string part in partList)
-                    writer.WriteLine(part);
-                writer.Close();
-            }
+                foreach(string part in partList) writer.WriteLine(part);
         }
         
-        private static void readMd5List()
+        private static void readModControl()
         {
             try
             {
-                //Get the part list if available
-                TextReader reader = File.OpenText(PART_LIST_FILENAME);
+                //Get the md5 list if available
+                TextReader reader = File.OpenText(MOD_CONTROL_FILE);
                 Dictionary<string, string> hashes = new Dictionary<string, string>();
+                List<string> allowedparts = new List<string>();
                 while (reader.Peek() != -1)
                 {
                 	string line = reader.ReadLine();
+                	string readmode = "parts";
                 	if(line[0] != '#')//allows commented lines
                 	{
-                		string[] splitline = line.Split(' ');
-                		hashes.Add(splitline[0], splitline[1]); //stores path:md5
+                		if(line[0] == '!')//changing readmode
+                		{
+                			if(line.Contains("partslist")){
+                				readmode = "parts";
+                			}
+                			else if(line.Contains("md5")){
+                				readmode = "md5";
+                			}
+                			else if(line.Contains("resources")){
+                				readmode = "resource";
+                			}
+                		}
+                		else if(readmode == "parts")
+                		{
+                			
+                		}
+                		else if(readmode == "md5")
+                		{
+                			string[] splitline = line.Split(' ');
+                			hashes.Add(splitline[0], splitline[1]); //stores path:md5
+                		}
+                		else if(readmode == "resource"){
+                		
+                		}
                 	}
                 }
                 reader.Close();
                 md5list = hashes;
+                partList = allowedparts;
             }
             catch (Exception e)
             {
             	Log.Debug("Exception thrown in readMd5List(), catch 1, Exception: {0}", e.ToString());
-                TextWriter writer = File.CreateText(MD5_FILE);
-                writer.WriteLine("#example\n#MechJeb2\\Plugins\\MechJeb2.dll 64E6E05C88F3466C63EDACD5CF8E5919\n");
+                TextWriter writer = File.CreateText(MOD_CONTROL_FILE);
+                writer.WriteLine("!partslist");
+                generatePartsList(writer);
                 writer.Close();
             }
         }
@@ -414,11 +399,9 @@ namespace KMPServer
             //Start hosting server
             stopwatch.Start();
 			
-			//read part list for server sided mod support
-			Log.Info("Reading " + PART_LIST_FILENAME);
-			readPartsList();
-			Log.Info("Reading " + MD5_FILE);
-			readMd5List();
+			//read info for server sided mod support
+			Log.Info("Reading " + MOD_CONTROL_FILE);
+			readModControl();
 			
             Log.Info("Hosting server on port {0} ...", settings.port);
 
