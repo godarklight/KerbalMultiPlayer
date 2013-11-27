@@ -655,6 +655,24 @@ namespace KMP
                                     lastClientDataChangeTime = stopwatch.ElapsedMilliseconds;
                                 }
                                 cheatsEnabled = Convert.ToBoolean(data[21]);
+                                //partList, requiredModList, md5List, resourceList and resourceControlMode 
+
+
+                                int partList_length = KMPCommon.intFromBytes(data, KMPCommon.SERVER_SETTINGS_LENGTH);
+                                byte[] partList_bytes = new byte[partList_length];
+                                Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 , partList_bytes, 0, partList_length);
+                                int requiredModList_length = KMPCommon.intFromBytes(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length);
+                                byte[] requiredModList_bytes = new byte[requiredModList_length];
+                                Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 , requiredModList_bytes, 0, requiredModList_length);
+                                int md5List_length = KMPCommon.intFromBytes(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length);
+                                byte[] md5List_bytes = new byte[md5List_length];
+                                Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 , md5List_bytes, 0, md5List_length);
+                                int resourceList_length = KMPCommon.intFromBytes(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length);
+                                byte[] resourceList_bytes = new byte[resourceList_length];
+                                Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 , resourceList_bytes, 0, resourceList_length);
+                                int resourceControlMode_length = KMPCommon.intFromBytes(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 + resourceList_length);
+                                byte[] resourceControlMode_bytes = new byte[resourceControlMode_length];
+                                Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 + resourceList_length + 4 , resourceControlMode_bytes, 0, resourceList_length);
                                 modCheck();
                             }
 

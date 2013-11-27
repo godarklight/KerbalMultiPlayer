@@ -3119,8 +3119,14 @@ namespace KMPServer
 
         private byte[] serverSettingBytes()
         {
-
-            byte[] bytes = new byte[KMPCommon.SERVER_SETTINGS_LENGTH];
+        
+            byte[] partList_bytes = new byte[0]; //set it here
+            byte[] requiredModList_bytes = new byte[0]; //set it here
+            byte[] md5List_bytes = new byte[0]; //set it here
+            byte[] resourceList_bytes = new byte[0]; //set it here
+            byte[] resourceControlMode_bytes = new byte[0]; //set it here
+            
+            byte[] bytes = new byte[KMPCommon.SERVER_SETTINGS_LENGTH + partList_bytes.Length + requiredModList_bytes.Length + md5List_bytes.Length + resourceList_bytes.Length + resourceControlMode_bytes.Length];
 
             KMPCommon.intToBytes(updateInterval).CopyTo(bytes, 0); //Update interval
             KMPCommon.intToBytes(settings.screenshotInterval).CopyTo(bytes, 4); //Screenshot interval
@@ -3128,6 +3134,19 @@ namespace KMPServer
 			BitConverter.GetBytes(settings.safetyBubbleRadius).CopyTo(bytes,12); //Safety bubble radius
             bytes[20] = inactiveShipsPerClient; //Inactive ships per client
             bytes[21] = Convert.ToByte(settings.cheatsEnabled);
+
+
+            KMPCommon.intToBytes(partList_bytes.Length).CopyTo(bytes, KMPCommon.SERVER_SETTINGS_LENGTH);
+            partList_bytes.CopyTo(bytes, KMPCommon.SERVER_SETTINGS_LENGTH + 4);
+            KMPCommon.intToBytes(requiredModList_bytes.Length).CopyTo(bytes, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_bytes.Length);
+            requiredModList_bytes.CopyTo(bytes, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_bytes.Length + 4);
+            KMPCommon.intToBytes(md5List_bytes.Length).CopyTo(bytes, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_bytes.Length + 4 + requiredModList_bytes.Length);
+            md5List_bytes.CopyTo(bytes, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_bytes.Length + 4 + requiredModList_bytes.Length + 4);
+            KMPCommon.intToBytes(resourceList_bytes.Length).CopyTo(bytes, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_bytes.Length + 4 + requiredModList_bytes.Length + 4 + md5List_bytes.Length);
+            resourceList_bytes.CopyTo(bytes, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_bytes.Length + 4 + requiredModList_bytes.Length + 4 + md5List_bytes.Length + 4);
+            KMPCommon.intToBytes(resourceControlMode_bytes.Length).CopyTo(bytes, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_bytes.Length + 4 + requiredModList_bytes.Length + 4 + md5List_bytes.Length + 4 + resourceList_bytes.Length);
+            resourceControlMode_bytes.CopyTo(bytes, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_bytes.Length + 4 + requiredModList_bytes.Length + 4 + md5List_bytes.Length + 4 + resourceList_bytes.Length + 4);
+
             return bytes;
         }
 
