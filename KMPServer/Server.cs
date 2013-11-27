@@ -3119,12 +3119,18 @@ namespace KMPServer
 
         private byte[] serverSettingBytes()
         {
-        
-            byte[] partList_bytes = new byte[0]; //set it here
-            byte[] requiredModList_bytes = new byte[0]; //set it here
-            byte[] md5List_bytes = new byte[0]; //set it here
-            byte[] resourceList_bytes = new byte[0]; //set it here
-            byte[] resourceControlMode_bytes = new byte[0]; //set it here
+        	byte[] md5List_bytes;
+        	using(MemoryStream ms = new MemoryStream())
+        	{
+        		var bf = new BinaryFormatter();
+        		bf.Serialize(ms, md5List);
+        		ms.Position = 0;
+        		md5List_bytes = ms.ToArray();
+        	}
+            byte[] partList_bytes = partList.SelectMany(s => Encoding.UTF8.GetBytes(s)).ToArray();
+            byte[] requiredModList_bytes = requiredModList.SelectMany(s => Encoding.UTF8.GetBytes(s)).ToArray();
+            byte[] resourceList_bytes = resourceList.SelectMany(s => Encoding.UTF8.GetBytes(s)).ToArray();
+            byte[] resourceControlMode_bytes = System.Text.Encoding.UTF8.GetBytes(resourceControlMode);
             
             byte[] bytes = new byte[KMPCommon.SERVER_SETTINGS_LENGTH + partList_bytes.Length + requiredModList_bytes.Length + md5List_bytes.Length + resourceList_bytes.Length + resourceControlMode_bytes.Length];
 
@@ -3367,7 +3373,7 @@ namespace KMPServer
                 File.Copy(DB_FILE, DB_FILE + ".bak", true);
                 Log.Debug("Successfully backup up database.");
             }
-			catch (IOException e)
+			catch (IOException)
 			{
 				Log.Error("Database does not exist.  Recreating.");
 			}
