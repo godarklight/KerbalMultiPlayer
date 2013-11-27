@@ -101,7 +101,10 @@ namespace KMP
 		public static Dictionary<String, String[]> favorites = new Dictionary<String, String[]>();
 		
 		//ModChecking
-		public static Dictionary<string, string> hashes = new Dictionary<string, string>();
+		public static List<string> partList = new List<string>();
+        public static Dictionary<string, string> md5List = new Dictionary<string, string>(); //path:md5
+        public static List<string> resourceList = new List<string>();
+        public static string resourceControlMode;
 		
         //Connection
         public static int clientID;
@@ -182,7 +185,6 @@ namespace KMP
         public static bool debugging = true;
         public static bool cheatsEnabled = false;
 
-        public static List<string> partList = new List<string>();
 
 
         public static void InitMPClient(KMPManager manager)
@@ -271,22 +273,11 @@ namespace KMP
             return sBuilder.ToString();
         }
         
-        public static void ModCheck()
+        public static void modCheck()
         {
         	MD5 md5 = MD5.Create();
-        	string path = getKMPDirectory() + "\\..\\..\\"; //returns full path to KMP\Plugins
+        	string path = new System.IO.DirectoryInfo(getKMPDirectory()).Parent.Parent.FullName;
         	string[] ls = System.IO.Directory.GetFiles(path, "*.*", System.IO.SearchOption.AllDirectories);
-        	string hash;
-        	if(hashes.Count == 0) //if hashes not yet generated
-        	{ 
-	        	foreach(string file in ls)
-	        	{
-	        		var contents = System.IO.File.ReadAllBytes(file);
-	        		hash = doHashMD5(md5, contents);
-	        		//Log.Info(file + " " + hash);
-	        		hashes.Add(file, hash);
-	        	}
-        	}
         }
 
         public static void Connect()
@@ -664,6 +655,7 @@ namespace KMP
                                     lastClientDataChangeTime = stopwatch.ElapsedMilliseconds;
                                 }
                                 cheatsEnabled = Convert.ToBoolean(data[21]);
+                                modCheck();
                             }
 
                             receivedSettings = true;

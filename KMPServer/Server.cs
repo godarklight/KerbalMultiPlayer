@@ -54,6 +54,7 @@ namespace KMPServer
         public const string MOD_CONTROL_FILE = "KMPModControl.txt";
         
         public static List<string> partList = new List<string>();
+        public static List<string> requiredModList = new List<string>();
         public static Dictionary<string, string> md5List = new Dictionary<string, string>(); //path:md5
         public static List<string> resourceList = new List<string>();
         public static string resourceControlMode = "blacklist";
@@ -286,6 +287,7 @@ namespace KMPServer
                 Dictionary<string, string> hashes = new Dictionary<string, string>();
                 List<string> allowedparts = new List<string>();
                 List<string> resources = new List<string>();
+                List<string> modList = new List<string>();
                 string resourcemode = "blacklist";
                 while (reader.Peek() != -1)
                 {
@@ -309,6 +311,10 @@ namespace KMPServer
                 				readmode = "resource";
                 				resourcemode = "whitelist";
                 			}
+                			else if(line.Contains("required")){
+                				readmode = "required";
+                			}
+                			Log.Info("Readmode: " + readmode);
                 		}
                 		else if(readmode == "parts")
                 		{
@@ -322,25 +328,39 @@ namespace KMPServer
                 		else if(readmode == "resource"){
                 			resources.Add(line);
                 		}
+                		else if(readmode == "required"){
+                			modList.Add(line);
+                		}
                 	}
                 }
                 reader.Close();
+                
                 md5List = hashes;
                 partList = allowedparts;
                 resourceList = resources;
+                requiredModList = modList;
                 resourceControlMode = resourcemode;
             }
             catch (Exception e)
             {
             	Log.Debug("Exception thrown in readMd5List(), catch 1, Exception: {0}", e.ToString());
+            	Log.Info(MOD_CONTROL_FILE + " not found, generating...");
                 TextWriter writer = File.CreateText(MOD_CONTROL_FILE);
                 writer.WriteLine("#You can comment by starting a line with a #, these are ignored by the server.");
+                writer.WriteLine("#Commenting will NOT work unless the line STARTS with a #.");
                 writer.WriteLine("#Sections supported are md5, partslist, resource-blacklist and resource-whitelist.");
                 writer.WriteLine("#You cannot use both resource-blacklist AND resource-whitelist in the same file.");
                 writer.WriteLine("#resource-blacklist bans ONLY the files you specify whereas resource-whitelist bans ALL resources except those you specify.");
                 writer.WriteLine("#Each section has its own type of formatting. Examples have been given.");
                 writer.WriteLine("#Sections are defined as follows");
+                writer.WriteLine("!required");
+                writer.WriteLine("#Here you can define GameData (mod) folders that the client requires before joining the server");
+                writer.WriteLine("#[Folder]");
+                writer.WriteLine("#Example: MechJeb2");
+                writer.WriteLine("Squad");
+                writer.WriteLine("#NOTE: This squad entry ensures that the client hasn't deleted the default parts. Disable this if undesired.");
                 writer.WriteLine("!md5");
+                writer.WriteLine("#To generate the md5 of a file you can use a utility such as this one: http://onlinemd5.com/");
                 writer.WriteLine("#For the MD5 section, file paths are read from inside GameData. If a client's MD5 does not match, they will not be permitted entry.");
                 writer.WriteLine("#You may not specify multiple MD5s for the same file.");
                 writer.WriteLine("#[File Path] [MD5]");
@@ -361,6 +381,7 @@ namespace KMPServer
                 writer.WriteLine("#You can use this application to generate partlists from a KSP installation if you want to add mod parts: http://forum.kerbalspaceprogram.com/threads/57284");
                 generatePartsList(writer);
                 writer.Close();
+                readModControl();
             }
         }
         
