@@ -5,7 +5,6 @@ using System.Text;
 using System.Globalization;
 
 using System.Security.Cryptography;
-using System.Runtime.Serialization.Formatters.Binary;
 //using System.IO AS OF 0.21 THIS HAS BEEN REENABLED, WE DON'T NEED TO USE KSP.IO ANYMORE
 
 using System.Net;
@@ -14,7 +13,6 @@ using System.Threading;
 using System.Diagnostics;
 
 using System.Collections;
-
 
 using KSP.IO;
 using UnityEngine;
@@ -106,8 +104,7 @@ namespace KMP
 		public static List<string> partList = new List<string>();
         public static Dictionary<string, string> md5List = new Dictionary<string, string>(); //path:md5
         public static List<string> resourceList = new List<string>();
-        public static List<string> requiredModList = new List<string>();
-        public static string resourceControlMode = "blacklist";
+        public static string resourceControlMode;
 		
         //Connection
         public static int clientID;
@@ -285,23 +282,18 @@ namespace KMP
 
         public static void Connect()
         {
-        	Log.Info("this is connect, does this motherfucker even run");
             clearConnectionState();
             File.Delete<KMPClientMain>("debug");
-            Log.Info("about to start thread");
             serverThread = new Thread(beginConnect);
-            Log.Info("no?");
             serverThread.Start();
-            Log.Info("why isn't this working?!??");
         }
 
         private static void beginConnect()
         {
-        	Log.Info("FUCK ME");
             SetMessage("Attempting to connect...");
             bool allow_reconnect = false;
             reconnectAttempts = MAX_RECONNECT_ATTEMPTS;
-			Log.Info("Fuck me is this even happening");
+
             do
             {
 
@@ -440,7 +432,6 @@ namespace KMP
                 //tcpSocket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.KeepAlive, true);
                 if (tcpSocket.Connected)
                 {
-                	Log.Info("At least getting as far as this?"); //nope FUCK
                     SetMessage("TCP connection established");
                     clientID = -1;
                     endSession = false;
@@ -505,8 +496,6 @@ namespace KMP
                     beginAsyncRead();
 
                     SetMessage("Connected to server! Handshaking...");
-                    
-                    Log.Info("Surely this is executing??!");
 
                     while (!endSession && !intentionalConnectionEnd && tcpSocket.Connected)
                     {
@@ -550,13 +539,10 @@ namespace KMP
 
         static void handleMessage(KMPCommon.ServerMessageID id, byte[] data)
         {
-        	Log.Info("please fucking tell me this is working"); //HOW is this NOT EVEN FUCKING EXECUTING
-        	
             //LogAndShare("Message ID: " + id.ToString() + " data: " + (data == null ? "0" : System.Text.Encoding.ASCII.GetString(data)));
             switch (id)
             {
                 case KMPCommon.ServerMessageID.HANDSHAKE:
-                	Log.Info("Are we even getting this far?");
                     Int32 protocol_version = KMPCommon.intFromBytes(data);
 
                     if (data.Length >= 8)
@@ -642,12 +628,12 @@ namespace KMP
                     break;
 
                 case KMPCommon.ServerMessageID.SERVER_SETTINGS:
-					Log.Info("sigh");
+
                     lock (serverSettingsLock)
                     {
                         if (data != null && data.Length >= KMPCommon.SERVER_SETTINGS_LENGTH && handshakeCompleted)
                         {
-							Log.Info("getting this far...");
+
                             updateInterval = KMPCommon.intFromBytes(data, 0);
                             screenshotInterval = KMPCommon.intFromBytes(data, 4);
 
@@ -671,7 +657,7 @@ namespace KMP
                                 cheatsEnabled = Convert.ToBoolean(data[21]);
                                 //partList, requiredModList, md5List, resourceList and resourceControlMode 
 
-								
+
                                 int partList_length = KMPCommon.intFromBytes(data, KMPCommon.SERVER_SETTINGS_LENGTH);
                                 byte[] partList_bytes = new byte[partList_length];
                                 Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 , partList_bytes, 0, partList_length);
@@ -687,39 +673,6 @@ namespace KMP
                                 int resourceControlMode_length = KMPCommon.intFromBytes(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 + resourceList_length);
                                 byte[] resourceControlMode_bytes = new byte[resourceControlMode_length];
                                 Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 + resourceList_length + 4 , resourceControlMode_bytes, 0, resourceList_length);
-                                
-                                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(md5List_bytes))
-                                {
-                                	var bf = new BinaryFormatter();
-                                	ms.Position = 0;
-                                	md5List = (Dictionary<string, string>) bf.Deserialize(ms);
-                                }
-                                
-                                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(partList_bytes))
-                                {
-                                	var bf = new BinaryFormatter();
-                                	ms.Position = 0;
-                                	partList = (List<string>) bf.Deserialize(ms);
-                                }
-                                
-                                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(requiredModList_bytes))
-                                {
-                                	var bf = new BinaryFormatter();
-                                	ms.Position = 0;
-                                	requiredModList = (List<string>) bf.Deserialize(ms);
-                                }
-                                
-                                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(resourceList_bytes))
-                                {
-                                	var bf = new BinaryFormatter();
-                                	ms.Position = 0;
-                                	resourceList = (List<string>) bf.Deserialize(ms);
-                                }
-                                
-                                resourceControlMode = System.Text.Encoding.UTF8.GetString(resourceControlMode_bytes);
-                                
-                                Log.Info(resourceControlMode);
-                                
                                 modCheck();
                             }
 
@@ -749,7 +702,6 @@ namespace KMP
                         String message = encoder.GetString(data, 0, data.Length);
 
                         gameManager.disconnect(message);
-                        Log.Info("data not fucking null");
                         clearConnectionState();
 
                         //If the reason is not a timeout, connection end is intentional
@@ -761,7 +713,6 @@ namespace KMP
                     else
                     {
                         gameManager.disconnect();
-                        Log.Info("data fucking null");
                         clearConnectionState();
                         SetMessage("Disconnected from server");
                     }
@@ -836,7 +787,6 @@ namespace KMP
 
         public static void clearConnectionState()
         {
-        	Log.Info("Well I know this motherfucker runs every time I click connect. Or does it");
             try
             {
                 //Abort all threads
@@ -859,7 +809,6 @@ namespace KMP
                 if (udpSocket != null)
                     udpSocket.Close();
                 udpSocket = null;
-                Log.Info("Hello hello");
             }
             catch (ThreadAbortException e) {
                 KMP.Log.Debug("Exception thrown in clearConnectionState(), catch 1, Exception: {0}", e.ToString());
