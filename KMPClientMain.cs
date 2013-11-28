@@ -674,7 +674,7 @@ namespace KMP
                                 Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 , resourceList_bytes, 0, resourceList_length);
                                 int resourceControlMode_length = KMPCommon.intFromBytes(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 + resourceList_length);
                                 byte[] resourceControlMode_bytes = new byte[resourceControlMode_length];
-                                Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 + resourceList_length + 4 , resourceControlMode_bytes, 0, resourceList_length);
+                                Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 + resourceList_length + 4 , resourceControlMode_bytes, 0, resourceControlMode_length);
                                 
                                 using (System.IO.MemoryStream ms = new System.IO.MemoryStream(md5List_bytes))
                                 {
