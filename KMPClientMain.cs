@@ -5,6 +5,7 @@ using System.Text;
 using System.Globalization;
 
 using System.Security.Cryptography;
+using System.Runtime.Serialization.Formatters.Binary;
 //using System.IO AS OF 0.21 THIS HAS BEEN REENABLED, WE DON'T NEED TO USE KSP.IO ANYMORE
 
 using System.Net;
@@ -104,7 +105,8 @@ namespace KMP
 		public static List<string> partList = new List<string>();
         public static Dictionary<string, string> md5List = new Dictionary<string, string>(); //path:md5
         public static List<string> resourceList = new List<string>();
-        public static string resourceControlMode;
+        public static List<string> requiredModList = new List<string>();
+		public static string resourceControlMode = "blacklist";
 		
         //Connection
         public static int clientID;
@@ -673,6 +675,39 @@ namespace KMP
                                 int resourceControlMode_length = KMPCommon.intFromBytes(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 + resourceList_length);
                                 byte[] resourceControlMode_bytes = new byte[resourceControlMode_length];
                                 Array.Copy(data, KMPCommon.SERVER_SETTINGS_LENGTH + 4 + partList_length + 4 + requiredModList_length + 4 + md5List_length + 4 + resourceList_length + 4 , resourceControlMode_bytes, 0, resourceList_length);
+                                
+                                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(md5List_bytes))
+                                {
+                                	var bf = new BinaryFormatter();
+	                                ms.Position = 0;
+	                                md5List = (Dictionary<string, string>) bf.Deserialize(ms);
+                                }
+                                
+                                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(partList_bytes))
+                                {
+	                                var bf = new BinaryFormatter();
+	                                ms.Position = 0;
+	                                partList = (List<string>) bf.Deserialize(ms);
+                                }
+                                
+                                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(requiredModList_bytes))
+                                {
+	                                var bf = new BinaryFormatter();
+	                                ms.Position = 0;
+	                                requiredModList = (List<string>) bf.Deserialize(ms);
+                                }
+                                
+                                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(resourceList_bytes))
+                                {
+	                                var bf = new BinaryFormatter();
+	                                ms.Position = 0;
+	                                resourceList = (List<string>) bf.Deserialize(ms);
+                                }
+                                
+                                resourceControlMode = System.Text.Encoding.UTF8.GetString(resourceControlMode_bytes);
+                                
+                                Log.Info(resourceControlMode);
+                                
                                 modCheck();
                             }
 

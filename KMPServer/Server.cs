@@ -3119,20 +3119,47 @@ namespace KMPServer
 
         private byte[] serverSettingBytes()
         {
-        	byte[] md5List_bytes;
-        	using(MemoryStream ms = new MemoryStream())
-        	{
-        		var bf = new BinaryFormatter();
-        		bf.Serialize(ms, md5List);
-        		ms.Position = 0;
-        		md5List_bytes = ms.ToArray();
-        	}
-            byte[] partList_bytes = partList.SelectMany(s => Encoding.UTF8.GetBytes(s)).ToArray();
-            byte[] requiredModList_bytes = requiredModList.SelectMany(s => Encoding.UTF8.GetBytes(s)).ToArray();
-            byte[] resourceList_bytes = resourceList.SelectMany(s => Encoding.UTF8.GetBytes(s)).ToArray();
-            byte[] resourceControlMode_bytes = System.Text.Encoding.UTF8.GetBytes(resourceControlMode);
+			byte[] md5List_bytes;
+		    byte[] partList_bytes;
+		    byte[] requiredModList_bytes;
+		    byte[] resourceList_bytes;
+		    byte[] resourceControlMode_bytes;
+		    
+	        using(MemoryStream ms = new MemoryStream())
+	        {
+	                var bf = new BinaryFormatter();
+	                bf.Serialize(ms, md5List);
+	                ms.Position = 0;
+	                md5List_bytes = ms.ToArray();
+	        }
+	        
+	        using(MemoryStream ms = new MemoryStream())
+	        {
+	                var bf = new BinaryFormatter();
+	                bf.Serialize(ms, partList);
+	                ms.Position = 0;
+	                partList_bytes = ms.ToArray();
+	        }
+	        
+	        using(MemoryStream ms = new MemoryStream())
+	        {
+	                var bf = new BinaryFormatter();
+	                bf.Serialize(ms, requiredModList);
+	                ms.Position = 0;
+	                requiredModList_bytes = ms.ToArray();
+	        }
+	        
+	        using(MemoryStream ms = new MemoryStream())
+	        {
+	                var bf = new BinaryFormatter();
+	                bf.Serialize(ms, resourceList);
+	                ms.Position = 0;
+	                resourceList_bytes = ms.ToArray();
+	        }
+	        
+	        resourceControlMode_bytes = System.Text.Encoding.UTF8.GetBytes(resourceControlMode);
             
-            byte[] bytes = new byte[KMPCommon.SERVER_SETTINGS_LENGTH + partList_bytes.Length + requiredModList_bytes.Length + md5List_bytes.Length + resourceList_bytes.Length + resourceControlMode_bytes.Length];
+            byte[] bytes = new byte[KMPCommon.SERVER_SETTINGS_LENGTH + partList_bytes.Length + requiredModList_bytes.Length + md5List_bytes.Length + resourceList_bytes.Length + resourceControlMode_bytes.Length + 20];
 
             KMPCommon.intToBytes(updateInterval).CopyTo(bytes, 0); //Update interval
             KMPCommon.intToBytes(settings.screenshotInterval).CopyTo(bytes, 4); //Screenshot interval
@@ -3375,7 +3402,7 @@ namespace KMPServer
             }
 			catch (IOException)
 			{
-				Log.Error("Database does not exist.  Recreating.");
+				Log.Error("Database does not exist. Recreating.");
 			}
             catch (Exception e)
             {
