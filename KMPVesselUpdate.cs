@@ -263,6 +263,7 @@ namespace KMP
                         crewMember.KerbalRef = null;
                     }
                     proto.Save(protoVesselNode);
+						protoVesselNode.Save(System.IO.Path.Combine(KSPUtil.ApplicationRootPath, "SendVessels/" + _vessel.id.ToString() + "-" + Planetarium.GetUniversalTime().ToString() + ".txt"));
                 }
             }
         }

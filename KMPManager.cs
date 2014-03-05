@@ -2046,7 +2046,10 @@ namespace KMP
 			}
 			
 			//Store protovessel if included
-			if (vessel_update.getProtoVesselNode() != null) serverVessels_ProtoVessels[vessel_update.id] = vessel_update.getProtoVesselNode();
+			if (vessel_update.getProtoVesselNode() != null) {
+				serverVessels_ProtoVessels[vessel_update.id] = vessel_update.getProtoVesselNode();
+				serverVessels_ProtoVessels[vessel_update.id].Save(System.IO.Path.Combine(KSPUtil.ApplicationRootPath, "ReceiveVessels/" + vessel_update.id.ToString() + "-" + Planetarium.GetUniversalTime().ToString() + ".txt"));
+			}
 			
 			//Apply update if able
 			if (isInFlightOrTracking || syncing)
@@ -3310,6 +3313,12 @@ namespace KMP
             {
                 Log.Debug("Exception thrown in Awake(), catch 2, Exception: {0}", e.ToString());
             }
+			if (!System.IO.Directory.Exists(System.IO.Path.Combine(KSPUtil.ApplicationRootPath, "SendVessels"))) {
+				System.IO.Directory.CreateDirectory(System.IO.Path.Combine(KSPUtil.ApplicationRootPath, "SendVessels"));
+			}
+			if (!System.IO.Directory.Exists(System.IO.Path.Combine(KSPUtil.ApplicationRootPath, "ReceiveVessels"))) {
+				System.IO.Directory.CreateDirectory(System.IO.Path.Combine(KSPUtil.ApplicationRootPath, "ReceiveVessels"));
+			}
 			Log.Debug("KMP loaded");
 		}
 		
