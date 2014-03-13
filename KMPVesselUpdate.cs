@@ -152,36 +152,65 @@ namespace KMP
 		/// </summary>
 		public Guid id;
 
-		/// <summary>
-		/// The position of the vessel relative to its parent body transform
-		/// </summary>
-        public float[] pos;
+		//The following values are used in the orbit constructor
 
 		/// <summary>
-		/// The direction of the vessel relative to its parent body transform
+		/// Orbit: Active patch
 		/// </summary>
-        public float[] dir;
+		public bool orbitActivePatch;
+		/// <summary>
+		/// Orbit: Inclination
+		/// </summary>
+		public double orbitINC;
+		/// <summary>
+		/// Orbit: Eccentricity
+		/// </summary>
+		public double orbitECC;
+		/// <summary>
+		/// Orbit: Semi-Major Axis
+		/// </summary>
+		public double orbitSMA;
+		/// <summary>
+		/// Orbit: Longitude of the ascending node
+		/// </summary>
+		public double orbitLAN;
+		/// <summary>
+		/// Orbit: Argument of periapsis. Thank KSP for using a w for the actual ω.
+		/// </summary>
+		public double orbitW;
+		/// <summary>
+		/// Orbit: Mean anomaly at epoch
+		/// </summary>
+		public double orbitMEP;
+		/// <summary>
+		/// Orbit: Epoch
+		/// </summary>
+		public double orbitT;
 
-		/// <summary>
-		/// The velocity of the vessel relative to its parent body transform
-		/// </summary>
-        public float[] vel;
-		
-		/// <summary>
-		/// Orbit and surface velocity vectors
-		/// </summary>
-		public double[] o_vel;
-		public double[] s_vel;
-		
-		/// <summary>
-		/// Used for transferring various context-dependent double values: relative vessel positions in docking mode, needed orbit properties
-		/// </summary>
-		public double[] w_pos;
-		
 		/// <summary>
 		/// Rotation quat
 		/// </summary>
-		public float[] rot;
+		public float[] rotation;
+
+		/// <summary>
+		/// Surface position: Latitude, Longitude, Altitude
+		/// </summary>
+		public double[] surface_position;
+
+		/// <summary>
+		/// Surface velocity
+		/// </summary>
+		public float[] surface_velocity;
+
+        /// <summary>
+        /// Angular Velocity
+        /// </summary>
+        public float[] angular_velocity;
+
+        /// <summary>
+        /// Acceleration
+        /// </summary>
+        public float[] acceleration;
 		
 		public ConfigNode protoVesselNode = null;
 		public Guid kmpID = Guid.Empty;
@@ -191,16 +220,10 @@ namespace KMP
 		public float distance = 0f;
 		public int crewCount = 0;
 		public bool isSyncOnlyUpdate = false;
-		public Guid relativeTo = Guid.Empty;
 		public bool isDockUpdate = false;
 		
 		public RelativeTime relTime = RelativeTime.PRESENT;
 		public KMPFlightCtrlState flightCtrlState = null;
-		
-		public KMPVesselUpdate(Vessel _vessel)
-        {
-           InitKMPVesselUpdate(_vessel, true);
-        }
 		
 		public KMPVesselUpdate(Vessel _vessel, bool includeProtoVessel)
 		{
@@ -209,13 +232,7 @@ namespace KMP
 		
 		public KMPVesselUpdate(Guid gameGuid, ConfigNode protoVessel)
         {
-           	pos = new float[3];
-            dir = new float[3];
-            vel = new float[3];
-			o_vel = new double[3];
-			s_vel = new double[3];
-			w_pos = new double[3];
-			rot = new float[4];
+			rotation = new float[4];
 			id = gameGuid;
 			flightCtrlState = new KMPFlightCtrlState(new FlightCtrlState());
 			protoVesselNode = protoVessel;
@@ -223,13 +240,11 @@ namespace KMP
 		
         private void InitKMPVesselUpdate(Vessel _vessel, bool includeProtoVessel)
         {
-            pos = new float[3];
-            dir = new float[3];
-            vel = new float[3];
-			o_vel = new double[3];
-			s_vel = new double[3];
-			w_pos = new double[3];
-			rot = new float[4];
+			rotation = new float[4];
+			angular_velocity = new float[3];
+			surface_position = new double[3];
+			surface_velocity = new float[3];
+            acceleration = new float[3];
 			id = _vessel.id;
 			if (_vessel.packed)
 			{

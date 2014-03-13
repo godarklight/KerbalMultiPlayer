@@ -1551,7 +1551,10 @@ namespace KMPServer
             tempQueue.Reverse();
             foreach (ClientMessage message in tempQueue)
             {
-                if (message.id == KMPCommon.ClientMessageID.PRIMARY_PLUGIN_UPDATE || message.id == KMPCommon.ClientMessageID.SECONDARY_PLUGIN_UPDATE)
+				if (message.id == KMPCommon.ClientMessageID.SECONDARY_PLUGIN_UPDATE) {
+						continue;
+				}
+                if (message.id == KMPCommon.ClientMessageID.PRIMARY_PLUGIN_UPDATE)
                 {
                     if (message.data == null)
                     {
