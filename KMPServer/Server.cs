@@ -36,6 +36,7 @@ namespace KMPServer
         #region Singletons
 
         private DatabaseHelper _helperSingleton = null;
+		private ServerProfiler serverProfiler = null;
 
         #endregion
 
@@ -237,6 +238,13 @@ namespace KMPServer
             }
 
             udpClient = null;
+
+            if (serverProfiler != null)
+            {
+                serverProfiler.Dispose();
+                serverProfiler = null;
+            }
+
 
             BackupDatabase();
         }
@@ -677,6 +685,10 @@ namespace KMPServer
                         Log.Debug("Failed to unset IPv6Only. Linux and Mac have this option off by default.");
                     }
                 }
+
+                //Initialise server profiler
+                serverProfiler = new ServerProfiler();
+                serverProfiler.Init();
 
                 listenThread.Start();
 
@@ -1437,7 +1449,6 @@ namespace KMPServer
                 long lastMessageBreak;
                 bool shouldOptimizeQueue = false;
                 Log.Debug("Starting disconnect thread");
-
                 while (true)
                 {
                     lastMessageBreak = stopwatch.ElapsedMilliseconds;
@@ -1446,8 +1457,12 @@ namespace KMPServer
                     {
                         ClientMessage message;
 
-                        if (clientMessageQueue.TryDequeue(out message))
+                        if (clientMessageQueue.TryDequeue(out message)) {
+                            double startTime = stopwatch.ElapsedMilliseconds;
                             handleMessage(message.client, message.id, message.data);
+                            long endTime = stopwatch.ElapsedMilliseconds;
+                            serverProfiler.AddData((int)message.id, startTime, endTime);
+                        }
                         else
                             break;
 
