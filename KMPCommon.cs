@@ -1,6 +1,7 @@
 using ICSharpCode.SharpZipLib.GZip;
 using System;
 using System.IO;
+using System.Threading;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -18,20 +19,22 @@ public class KMPCommon
     public const Int32 FILE_FORMAT_VERSION = 10000;
     public const Int32 NET_PROTOCOL_VERSION = 10016;
     public const int MSG_HEADER_LENGTH = 8;
-    public const int MAX_MESSAGE_SIZE = 1024 * 1024; //Enough room for a max-size craft file
+    public const int MAX_MESSAGE_SIZE = 1024 * 1024;
+    //Enough room for a max-size craft file
     public const int MESSAGE_COMPRESSION_THRESHOLD = 4096;
-    public const int SPLIT_MESSAGE_SIZE = 8192; //Split big messages into smaller chunks, so high priority messages can get through faster.
+    public const int SPLIT_MESSAGE_SIZE = 8192;
+    //Split big messages into smaller chunks, so high priority messages can get through faster.
     public const int INTEROP_MSG_HEADER_LENGTH = 8;
-
-    public const int SERVER_SETTINGS_LENGTH = 23; //Length of fixed position information. Variable length settings start after this (including the header).
-
+    public const int SERVER_SETTINGS_LENGTH = 23;
+    //Length of fixed position information. Variable length settings start after this (including the header).
     public const int MAX_CRAFT_FILE_BYTES = 1024 * 1024;
-
-    public const String SHARE_CRAFT_COMMAND = "!sharecraft";//"/" chat commands handled by client
-    public const String GET_CRAFT_COMMAND = "!getcraft";	//"!" chat commands handled by server
+    public const String SHARE_CRAFT_COMMAND = "!sharecraft";
+    //"/" chat commands handled by client
+    public const String GET_CRAFT_COMMAND = "!getcraft";
+    //"!" chat commands handled by server
     public const String RCON_COMMAND = "!rcon";
-
     public const String ADMIN_MARKER = "@";
+    private static bool useSysIO = false;
 
     public static string filteredFileName(string filename)
     {
@@ -67,167 +70,324 @@ public class KMPCommon
 
     public enum ClientMessageID
     {
-        HANDSHAKE /*Username Length : Username : Version*/,
-        PRIMARY_PLUGIN_UPDATE /*data*/,
-        SECONDARY_PLUGIN_UPDATE /*data*/,
-        SCENARIO_UPDATE /*data*/,
-        TEXT_MESSAGE /*Message text*/,
-        SCREEN_WATCH_PLAYER /*Player name*/,
-        SCREENSHOT_SHARE /*Description Length : Description : data*/,
+        HANDSHAKE
+        /*Username Length : Username : Version*/,
+        PRIMARY_PLUGIN_UPDATE
+        /*data*/,
+        SECONDARY_PLUGIN_UPDATE
+        /*data*/,
+        SCENARIO_UPDATE
+        /*data*/,
+        TEXT_MESSAGE
+        /*Message text*/,
+        SCREEN_WATCH_PLAYER
+        /*Player name*/,
+        SCREENSHOT_SHARE
+        /*Description Length : Description : data*/,
         KEEPALIVE,
-        CONNECTION_END /*Message*/ ,
+        CONNECTION_END
+        /*Message*/,
         UDP_PROBE,
         NULL,
-        SHARE_CRAFT_FILE /*Craft Type Byte : Craft name length : Craft Name : File bytes*/,
+        SHARE_CRAFT_FILE
+        /*Craft Type Byte : Craft name length : Craft Name : File bytes*/,
         ACTIVITY_UPDATE_IN_GAME,
         ACTIVITY_UPDATE_IN_FLIGHT,
         PING,
         WARPING,
         SSYNC,
-        SPLIT_MESSAGE, /* Pre-emptive add for when message-queueing is implemented client side */
-        SYNC_TIME /*NTP style sync*/
+        SPLIT_MESSAGE,
+        /* Pre-emptive add for when message-queueing is implemented client side */
+        SYNC_TIME
+        /*NTP style sync*/
     }
 
     public enum ServerMessageID
     {
-        HANDSHAKE /*Protocol Version : Version String Length : Version String : ClientID : Mode*/,
-        HANDSHAKE_REFUSAL /*Refusal message*/,
-        SERVER_MESSAGE /*Message text*/,
-        TEXT_MESSAGE /*Message text*/,
-        MOTD_MESSAGE /*Message text*/,
-        PLUGIN_UPDATE /*data*/,
-        SCENARIO_UPDATE /*data*/,
-        SERVER_SETTINGS /*UpdateInterval (4) : Screenshot Interval (4) : Screenshot Height (4) :  Bubble Size (8) : InactiveShips (1)*/,
-        SCREENSHOT_SHARE /*Description Length : Description : data*/,
+        HANDSHAKE
+        /*Protocol Version : Version String Length : Version String : ClientID : Mode*/,
+        HANDSHAKE_REFUSAL
+        /*Refusal message*/,
+        SERVER_MESSAGE
+        /*Message text*/,
+        TEXT_MESSAGE
+        /*Message text*/,
+        MOTD_MESSAGE
+        /*Message text*/,
+        PLUGIN_UPDATE
+        /*data*/,
+        SCENARIO_UPDATE
+        /*data*/,
+        SERVER_SETTINGS
+        /*UpdateInterval (4) : Screenshot Interval (4) : Screenshot Height (4) :  Bubble Size (8) : InactiveShips (1)*/,
+        SCREENSHOT_SHARE
+        /*Description Length : Description : data*/,
         KEEPALIVE,
-        CONNECTION_END /*Message*/,
+        CONNECTION_END
+        /*Message*/,
         UDP_ACKNOWLEDGE,
         NULL,
-        CRAFT_FILE /*Craft Type Byte : Craft name length : Craft Name : File bytes*/,
+        CRAFT_FILE
+        /*Craft Type Byte : Craft name length : Craft Name : File bytes*/,
         PING_REPLY,
-        SYNC /*tick*/,
+        SYNC
+        /*tick*/,
         SYNC_COMPLETE,
-        SPLIT_MESSAGE, /* This allows higher priority messages more entry points into the send queue */
-        SYNC_TIME /*NTP style sync*/
+        SPLIT_MESSAGE,
+        /* This allows higher priority messages more entry points into the send queue */
+        SYNC_TIME
+        /*NTP style sync*/
     }
 
     public enum ClientInteropMessageID
     {
         NULL,
-        CLIENT_DATA /*Byte - Inactive Vessels Per Update : Screenshot Height : UpdateInterval : Player Name*/,
-        SCREENSHOT_RECEIVE /*Description Length : Description : data*/,
-        CHAT_RECEIVE /*Message*/,
-        PLUGIN_UPDATE /*data*/,
-        SCENARIO_UPDATE /*data*/
+        CLIENT_DATA
+        /*Byte - Inactive Vessels Per Update : Screenshot Height : UpdateInterval : Player Name*/,
+        SCREENSHOT_RECEIVE
+        /*Description Length : Description : data*/,
+        CHAT_RECEIVE
+        /*Message*/,
+        PLUGIN_UPDATE
+        /*data*/,
+        SCENARIO_UPDATE
+        /*data*/
     }
 
     public enum PluginInteropMessageID
     {
         NULL,
-        PLUGIN_DATA /*Byte - In-Flight : Int32 - Current Game Title length : Current Game Title : Int32 - Screenshot watch player name length : Screenshot watch player name*/,
-        SCREENSHOT_SHARE /*Description Length : Description : data*/,
-        CHAT_SEND /*Message*/,
-        PRIMARY_PLUGIN_UPDATE /*data*/,
-        SECONDARY_PLUGIN_UPDATE /*data*/,
-        SCENARIO_UPDATE /*data*/,
-        WARPING /*data*/,
-        SSYNC /*data*/,
-        SYNC_TIME /*data*/
+        PLUGIN_DATA
+        /*Byte - In-Flight : Int32 - Current Game Title length : Current Game Title : Int32 - Screenshot watch player name length : Screenshot watch player name*/,
+        SCREENSHOT_SHARE
+        /*Description Length : Description : data*/,
+        CHAT_SEND
+        /*Message*/,
+        PRIMARY_PLUGIN_UPDATE
+        /*data*/,
+        SECONDARY_PLUGIN_UPDATE
+        /*data*/,
+        SCENARIO_UPDATE
+        /*data*/,
+        WARPING
+        /*data*/,
+        SSYNC
+        /*data*/,
+        SYNC_TIME
+        /*data*/
     }
-
     /* KMP message data format
      * Uncompressed data: [bool-false : data]
      * Compressed data: [bool-true : Int32-uncompressed length : compressed_data]
      */
+    public static void SanityCheckSysIO()
+    {
+        //The SysIO methods can hang, so lets put them in their own thread.
+        Thread sysThread = new Thread(new ThreadStart(SysIOCheck));
+        sysThread.Start();
+    }
+
+    public static void SysIOCheck()
+    {
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+        sw.Start();
+        Random r = new Random();
+        byte[] randomData = new byte[MESSAGE_COMPRESSION_THRESHOLD + 1024];
+        r.NextBytes(randomData);
+        byte[] compressedData = SysIOCompress(randomData);
+        byte[] decompressedData = SysIODecompress(compressedData);
+        sw.Stop();
+        if (decompressedData.SequenceEqual(randomData) && sw.ElapsedMilliseconds < 100)
+        {
+            useSysIO = true;
+        }
+    }
 
     public static byte[] Compress(byte[] data, bool forceUncompressed = false)
     {
-        if (data == null) return null;
-        byte[] compressedData = null;
-        MemoryStream ms = null;
-        GZipOutputStream gzip = null;
-        try
+        if (useSysIO)
         {
-            ms = new MemoryStream();
-            if (data.Length < MESSAGE_COMPRESSION_THRESHOLD || forceUncompressed)
-            {
-                //Small message, don't compress
-                using (BinaryWriter writer = new BinaryWriter(ms))
-                {
-                    writer.Write(false);
-                    writer.Write(data, 0, data.Length);
-                    compressedData = ms.ToArray();
-                    ms.Close();
-                    writer.Close();
-                }
-            }
-            else
-            {
-                //Compression enabled
-                Int32 size = data.Length;
-                using (BinaryWriter writer = new BinaryWriter(ms))
-                {
-                    writer.Write(true);
-                    writer.Write(size);
-                    gzip = new GZipOutputStream(ms);
-                    gzip.Write(data, 0, data.Length);
-                    gzip.Close();
-                    compressedData = ms.ToArray();
-                    ms.Close();
-                    writer.Close();
-                }
-            }
+            return SysIOCompress(data, forceUncompressed);
         }
-        catch
+        else
         {
-            return null;
+            return ICSharpCompress(data, forceUncompressed);
         }
-        finally
-        {
-            if (gzip != null) gzip.Dispose();
-            if (ms != null) ms.Dispose();
-        }
-        return compressedData;
+
     }
 
     public static byte[] Decompress(byte[] data)
     {
-        if (data == null) return null;
-        byte[] decompressedData = null;
-        MemoryStream ms = null;
-        GZipInputStream gzip = null;
+        if (useSysIO)
+        {
+            return SysIODecompress(data);
+        }
+        else
+        {
+            return ICSharpDecompress(data);
+        }
+
+    }
+
+    private static byte[] SysIOCompress(byte[] data, bool forceUncompressed = false)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+        byte[] compressedData = null;
         try
         {
-            ms = new MemoryStream(data, false);
-            using (BinaryReader reader = new BinaryReader(ms))
+            using (MemoryStream ms = new MemoryStream())
             {
-                bool compressedFlag = reader.ReadBoolean();
-                if (compressedFlag == false)
+                using (BinaryWriter writer = new BinaryWriter(ms))
                 {
-                    //Uncompressed
-                    decompressedData = reader.ReadBytes(data.Length - 1);
+                    //If under the threshold mark it as uncompressed and add the data to the byte array.
+                    if (data.Length < MESSAGE_COMPRESSION_THRESHOLD || forceUncompressed)
+                    {
+                        //Small message, don't compress
+                        writer.Write(false);
+                        writer.Write(data, 0, data.Length);
+                        compressedData = ms.ToArray();
+                    }
+                    else
+                    {
+                        //If over the compression threshold, mark it as compressed and add the compressed size, then the compressed data.
+                        writer.Write(true);
+                        writer.Write(data.Length);
+                        using (System.IO.Compression.GZipStream gzip = new System.IO.Compression.GZipStream(ms, System.IO.Compression.CompressionMode.Compress))
+                        {
+                            gzip.Write(data, 0, data.Length);
+                        }
+                        compressedData = ms.ToArray();
+                    }
                 }
-                else
-                {
-                    //Decompress
-                    Int32 size = reader.ReadInt32();
-                    gzip = new GZipInputStream(ms);
-                    decompressedData = new byte[size];
-                    gzip.Read(decompressedData, 0, decompressedData.Length);
-                    gzip.Close();
-                    ms.Close();
-                }
-                reader.Close();
             }
         }
         catch
         {
+            compressedData = null;
+        }
+        return compressedData;
+    }
+
+    private static byte[] ICSharpCompress(byte[] data, bool forceUncompressed = false)
+    {
+        if (data == null)
+        {
             return null;
         }
-        finally
+        byte[] compressedData = null;
+        try
         {
-            if (gzip != null) gzip.Dispose();
-            if (ms != null) ms.Dispose();
+            
+            using (MemoryStream ms = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(ms))
+                {
+                    //If under the threshold mark it as uncompressed and add the data to the byte array.
+                    if (data.Length < MESSAGE_COMPRESSION_THRESHOLD || forceUncompressed)
+                    {
+                        //Small message, don't compress
+                        writer.Write(false);
+                        writer.Write(data, 0, data.Length);
+                        compressedData = ms.ToArray();
+                    }
+                    else
+                    {
+                        //If over the compression threshold, mark it as compressed and add the compressed size, then the compressed data.
+                        writer.Write(true);
+                        writer.Write(data.Length);
+                        using (GZipOutputStream gzip = new GZipOutputStream(ms))
+                        {
+                            gzip.Write(data, 0, data.Length);
+                        }
+                        compressedData = ms.ToArray();
+                    }
+                }
+            }
+        }
+        catch
+        {
+            compressedData = null;
+        }
+        return compressedData;
+    }
+
+    private static byte[] SysIODecompress(byte[] data)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+        byte[] decompressedData = null;
+        try
+        {
+            using (MemoryStream ms = new MemoryStream(data, false))
+            {
+                using (BinaryReader reader = new BinaryReader(ms))
+                {
+                    bool compressedFlag = reader.ReadBoolean();
+                    if (compressedFlag == false)
+                    {
+                        //Uncompressed
+                        decompressedData = reader.ReadBytes(data.Length - 1);
+                    }
+                    else
+                    {
+                        //Decompress
+                        Int32 size = reader.ReadInt32();
+                        using (System.IO.Compression.GZipStream gzip = new System.IO.Compression.GZipStream(ms, System.IO.Compression.CompressionMode.Decompress))
+                        {
+                            decompressedData = new byte[size];
+                            gzip.Read(decompressedData, 0, decompressedData.Length);
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            decompressedData = null;
+        }
+        return decompressedData;
+    }
+
+    private static byte[] ICSharpDecompress(byte[] data)
+    {
+        if (data == null)
+        {
+            return null;
+        }
+        byte[] decompressedData = null;
+        try
+        {
+            using (MemoryStream ms = new MemoryStream(data, false))
+            {
+                using (BinaryReader reader = new BinaryReader(ms))
+                {
+                    bool compressedFlag = reader.ReadBoolean();
+                    if (compressedFlag == false)
+                    {
+                        //Uncompressed
+                        decompressedData = reader.ReadBytes(data.Length - 1);
+                    }
+                    else
+                    {
+                        //Decompress
+                        Int32 size = reader.ReadInt32();
+                        using (GZipInputStream gzip = new GZipInputStream(ms))
+                        {
+                            decompressedData = new byte[size];
+                            gzip.Read(decompressedData, 0, decompressedData.Length);
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            decompressedData = null;
         }
         return decompressedData;
     }

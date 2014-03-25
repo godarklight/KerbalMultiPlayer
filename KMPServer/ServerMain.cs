@@ -29,6 +29,7 @@ namespace KMPServer
 			ServerSettings.loadWhitelist(settings);
 			ServerSettings.loadBans(settings);
             ServerSettings.loadAdmins(settings);
+            KMPCommon.SanityCheckSysIO ();
 
 			bool settingsChanged = false;
 

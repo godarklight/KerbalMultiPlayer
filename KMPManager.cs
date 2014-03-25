@@ -76,6 +76,7 @@ namespace KMP
 		{
 			//Initialize client
 			KMPClientMain.InitMPClient(this);
+            KMPCommon.SanityCheckSysIO();
 			Log.Debug("Client Initialized.");
 		}
 		
