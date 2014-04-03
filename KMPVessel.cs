@@ -13,6 +13,15 @@ namespace KMP
 
 		public KMPVesselInfo info;
 
+        public Orbit referenceOrbit;
+        public Vector3 referenceForward;
+        public Vector3 referenceUp;
+        public Vector3d referenceSurfacePosition;
+        public Vector3d referenceSurfaceVelocity;
+        public Vector3 referenceAngularVelocity;
+        public Vector3d referenceAcceleration;
+        public double referenceUTOrbit;
+
 		public String vesselName
 		{
 			private set;
@@ -196,6 +205,7 @@ namespace KMP
 			generateActiveColor();
 
             line = gameObj.AddComponent<LineRenderer>();
+
             orbitRenderer = gameObj.AddComponent<OrbitRenderer>();
 			orbitRenderer.driver = new OrbitDriver();
             orbitRenderer.celestialBody = FlightGlobals.Bodies.Find(b => b.bodyName == body_name);
@@ -414,8 +424,10 @@ namespace KMP
             line.SetPosition(0, ScaledSpace.LocalToScaledSpace(worldPosition - line_half_dir));
             line.SetPosition(1, ScaledSpace.LocalToScaledSpace(worldPosition + line_half_dir));
 
-			if (!situationIsGrounded(info.situation))
-				orbitRenderer.driver.orbit.UpdateFromUT(adjustedUT);
+            if (!situationIsGrounded(info.situation))
+            {
+                orbitRenderer.driver.orbit.UpdateFromUT(adjustedUT);
+            }
         }
 
         public void updateOrbitProperties()
@@ -449,10 +461,14 @@ namespace KMP
         {
 			line.enabled = !force_hide && orbitValid && gameObj != null && MapView.MapIsEnabled;
 
-			if (gameObj != null && !force_hide && shouldShowOrbit)
-				orbitRenderer.drawMode = OrbitRenderer.DrawMode.REDRAW_AND_RECALCULATE;
-			else
-				orbitRenderer.drawMode = OrbitRenderer.DrawMode.OFF;
+            if (gameObj != null && !force_hide && shouldShowOrbit)
+            {
+                orbitRenderer.drawMode = OrbitRenderer.DrawMode.REDRAW_AND_RECALCULATE;
+            }
+            else
+            {
+                orbitRenderer.drawMode = OrbitRenderer.DrawMode.OFF;
+            }
 
 			//Determine the color
 			Color color = activeColor;
@@ -461,7 +477,6 @@ namespace KMP
 				color = Color.white; //Change line color when moused over
 			else
 			{
-				
 				switch (info.state)
 				{
 					case State.ACTIVE:
@@ -477,20 +492,16 @@ namespace KMP
 						color = activeColor * 0.5f;
 						break;
 				}
-				
-			}
+			}      
 
 			line.SetColors(color, color);
 			orbitRenderer.driver.orbitColor = color * 0.5f;
-
 			if (force_hide || !orbitValid)
 				orbitRenderer.drawIcons = OrbitRenderer.DrawIcons.NONE;
 			else if (info.state == State.ACTIVE && shouldShowOrbit)
 				orbitRenderer.drawIcons = OrbitRenderer.DrawIcons.OBJ_PE_AP;
 			else
-				orbitRenderer.drawIcons = OrbitRenderer.DrawIcons.OBJ;
-
-
+				orbitRenderer.drawIcons = OrbitRenderer.DrawIcons.OBJ;           
         }
 
 		public static bool situationIsGrounded(Situation situation) {
@@ -525,5 +536,75 @@ namespace KMP
 					return false;
 			}
 		}
+
+        //Orbital methods
+        public bool useSurfacePositioning
+        {
+            get
+            {
+                return (situationIsGrounded(info.situation) || referenceSurfacePosition.z < 10000);
+            }
+        }
+
+        public Vector3d surfaceModePosition
+        {
+            get
+            {
+                //surfaceMotionPrediciton returns Vector3d.zero if we aren't in a situation to use it.
+                //Add 10cm to the height so we don't go popping wheels
+                switch (vesselRef.vesselType)
+                {
+                    case VesselType.EVA:
+                        return referenceOrbit.referenceBody.GetWorldSurfacePosition(referenceSurfacePosition.x, referenceSurfacePosition.y, referenceSurfacePosition.z) + surfacePositionPrediction;
+                        case VesselType.Flag:
+                        return referenceOrbit.referenceBody.GetWorldSurfacePosition(referenceSurfacePosition.x, referenceSurfacePosition.y, -1);
+                        default:
+                        return referenceOrbit.referenceBody.GetWorldSurfacePosition(referenceSurfacePosition.x, referenceSurfacePosition.y, (referenceSurfacePosition.z + .1)) + surfacePositionPrediction;
+                }
+            }
+        }
+
+        public Vector3d surfaceModeVelocity
+        {
+            get
+            {
+                //return vesselRef.rigidbody.transform.TransformDirection(referenceSurfaceVelocity);
+                return referenceSurfaceVelocity + velocityPrediction;
+            }
+        }
+        //Returns a vector in world co-ordinates of the estimated surface transform if we are well in-sync.
+        private Vector3d surfacePositionPrediction
+        {
+            get
+            {
+                //This uses the most awesome algorithm of position = position + (surface_velocity * time_difference).
+                Vector3d fudge = referenceSurfaceVelocity;
+                float timeDelta = (float)(Planetarium.GetUniversalTime() - referenceUT);
+                //These values should probably be constants somewhere.
+                //Max prediction: 3 seconds.
+                //Has to be grounded as this is intended for rover drag racing.
+                if (Math.Abs(timeDelta) < 3)
+                {
+                    return (fudge * timeDelta);
+                }
+                return Vector3d.zero;
+            }
+        }
+
+        private Vector3d velocityPrediction
+        {
+            get
+            {
+                Vector3d fudge = referenceAcceleration;
+                float timeDelta = (float)(Planetarium.GetUniversalTime() - referenceUT);
+                //These values should probably be constants somewhere.
+                //Max prediction: 3 seconds.
+                if (Math.Abs(timeDelta) < 3)
+                {
+                    return (fudge * timeDelta);
+                }
+                return Vector3d.zero;
+            }
+        }
     }
 }

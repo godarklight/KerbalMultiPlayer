@@ -196,6 +196,27 @@ namespace KMP
 		
 		public RelativeTime relTime = RelativeTime.PRESENT;
 		public KMPFlightCtrlState flightCtrlState = null;
+
+        //Orbital positioning updates
+        //Class version field.
+        [OptionalField]
+        public int classVersion = 1;
+
+        //Orbital data field
+        [OptionalField]
+        public double[] orbit;
+
+        //Angular data field
+        [OptionalField]
+        public float[] angular_velocity;
+
+        //Acceleration data field
+        [OptionalField]
+        public double[] acceleration;
+
+        //Instant control updates (gear,light,brakes,sas,rcs)
+        [OptionalField]
+        public ConfigNode actiongroups;
 		
 		public KMPVesselUpdate(Vessel _vessel)
         {
@@ -216,6 +237,9 @@ namespace KMP
 			s_vel = new double[3];
 			w_pos = new double[3];
 			rot = new float[4];
+            orbit = new double[6];
+            angular_velocity = new float[3];
+            acceleration = new double[3];
 			id = gameGuid;
 			flightCtrlState = new KMPFlightCtrlState(new FlightCtrlState());
 			protoVesselNode = protoVessel;
@@ -230,6 +254,9 @@ namespace KMP
 			s_vel = new double[3];
 			w_pos = new double[3];
 			rot = new float[4];
+            orbit = new double[7];
+            angular_velocity = new float[3];
+            acceleration = new double[3];
 			id = _vessel.id;
 			if (_vessel.packed)
 			{
@@ -238,6 +265,16 @@ namespace KMP
 			else
 			{
 				flightCtrlState = new KMPFlightCtrlState(_vessel.ctrlState);
+                actiongroups = new ConfigNode();
+                try
+                {
+                    _vessel.ActionGroups.Save(actiongroups);
+                }
+                catch (Exception e)
+                {
+                    Log.Debug("Exception thrown in InitKMPVesselUpdate(), catch 1, Exception: {0}", e.ToString());
+                    actiongroups = null;
+                }
 				if (includeProtoVessel)
 				{
 					protoVesselNode = new ConfigNode();
@@ -248,7 +285,7 @@ namespace KMP
 					}
 					catch (Exception e)
 					{
-					    Log.Debug("Exception thrown in InitKMPVesselUpdate(), catch 1, Exception: {0}", e.ToString());
+					    Log.Debug("Exception thrown in InitKMPVesselUpdate(), catch 2, Exception: {0}", e.ToString());
 						proto = null;
 					}
 					if (proto != null)
