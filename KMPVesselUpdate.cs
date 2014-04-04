@@ -241,6 +241,10 @@ namespace KMP
             }
             if (includeProtoVessel)
             {
+                if (!_vessel.loaded)
+                {
+                    _vessel.Load();
+                }
                 protoVesselNode = new ConfigNode();
                 ProtoVessel proto;
                 try
