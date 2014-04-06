@@ -827,11 +827,17 @@ namespace KMP
 			else
 			{
 				forceQuit = true;
-				ScreenMessages.PostScreenMessage("You have been disconnected. Please return to the Main Menu to reconnect.",300f,ScreenMessageStyle.UPPER_CENTER);
-				if (!String.IsNullOrEmpty(message)) ScreenMessages.PostScreenMessage(message, 300f,ScreenMessageStyle.UPPER_CENTER);
 			}
-			if (String.IsNullOrEmpty(message)) KMPClientMain.SetMessage("Disconnected");
-			else KMPClientMain.SetMessage("Disconnected: " + message);
+
+            if (String.IsNullOrEmpty(message))
+            {
+                KMPClientMain.SetMessage("Disconnected"); 
+            }
+            else
+            {
+                KMPClientMain.SetMessage("Disconnected: " + message);
+            }
+
             saveGlobalSettings();
 			gameRunning = false;
 			terminateConnection = true;
@@ -4116,8 +4122,10 @@ namespace KMP
 				Log.Debug("Force quit");
 				forceQuit = false;
 				gameRunning = false;
-				if (HighLogic.LoadedScene != GameScenes.MAINMENU)
-					HighLogic.LoadScene(GameScenes.MAINMENU);
+                if (HighLogic.LoadedScene != GameScenes.MAINMENU)
+                {
+                    HighLogic.LoadScene(GameScenes.MAINMENU);
+                }
 			}
 
 			if (terminateConnection) {
@@ -4536,15 +4544,12 @@ namespace KMP
 
 					GUILayout.BeginHorizontal();
 					
-					if (GUILayout.Button("Disconnect & Exit"))
-					{
-                        disconnect();
-						KMPClientMain.sendConnectionEndMessage("Quit");
-						KMPClientMain.intentionalConnectionEnd = true;
-						KMPClientMain.endSession = true;
-						gameRunning = false;
-						forceQuit = true;
-					}
+                    if (GUILayout.Button("Disconnect & Exit"))
+                    {
+                        forceQuit = true;
+                        disconnect("Quit");
+                        KMPClientMain.intentionalConnectionEnd = true;
+                    }
 
 					GUILayout.EndHorizontal();
 					
