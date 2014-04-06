@@ -291,81 +291,73 @@ namespace KMP
                         break;
                     }
                     line = line.Trim();
-                    try
-                    {
-                        if (!String.IsNullOrEmpty(line) && line[0] != '#') //Skip empty or commented lines.
+                    if (!String.IsNullOrEmpty(line) && line[0] != '#') //Skip empty or commented lines.
+                    { 
+                        if (line[0] == '!') //changing readmode
                         { 
-                            if (line[0] == '!') //changing readmode
-                            { 
-                                string trimmedLine = line.Substring(1); //Returns 'partslist' from ' !partslist'
-                                switch (trimmedLine)
-                                {
-                                    case "partslist":
-                                    case "required-files":
-                                    case "optional-files":
-                                        readmode = trimmedLine;
-                                        break;
-                                    case "resource-blacklist": //allow all resources EXCEPT these in file
-                                        readmode = "resource";
-                                        resourcemode = "blacklist";
-                                        break;
-                                    case "resource-whitelist": //allow NO resources EXCEPT these in file
-                                        readmode = "resource";
-                                        resourcemode = "whitelist";
-                                        break;
-                                }
-                            }
-                            else
+                            string trimmedLine = line.Substring(1); //Returns 'partslist' from ' !partslist'
+                            switch (trimmedLine)
                             {
-                                if (readmode == "partslist")
-                                {
-                                    allowedParts.Add(line);
-                                }
-                                if (readmode == "required-files")
-                                {
-                                    string hash = "";
-                                    splitline[0] = line;
-                                    if (line.Contains('=')) //Let's make the = on the end of the lines optional
-                                    {
-                                        splitline = line.Split('=');
-                                        if (splitline.Length > 1)
-                                        {
-                                            hash = splitline[1];
-                                        }
-                                    }
-                                    hashes.Add(splitline[0], new SHAMod { sha = hash, required = true });
-                                }
-                                if (readmode == "optional-files")
+                                case "partslist":
+                                case "required-files":
+                                case "optional-files":
+                                    readmode = trimmedLine;
+                                    break;
+                                case "resource-blacklist": //allow all resources EXCEPT these in file
+                                    readmode = "resource";
+                                    resourcemode = "blacklist";
+                                    break;
+                                case "resource-whitelist": //allow NO resources EXCEPT these in file
+                                    readmode = "resource";
+                                    resourcemode = "whitelist";
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            if (readmode == "partslist")
+                            {
+                                allowedParts.Add(line);
+                            }
+                            if (readmode == "required-files")
+                            {
+                                string hash = "";
+                                splitline[0] = line;
+                                if (line.Contains('=')) //Let's make the = on the end of the lines optional
                                 {
                                     splitline = line.Split('=');
-                                    string hash = "";
-                                    splitline[0] = line;
-                                    if (line.Contains('=')) //Let's make the = on the end of the lines optional
+                                    if (splitline.Length > 1)
                                     {
-                                        splitline = line.Split('=');
-                                        if (splitline.Length > 1)
-                                        {
-                                            hash = splitline[1];
-                                        }
+                                        hash = splitline[1];
                                     }
-                                    hashes.Add(splitline[0], new SHAMod { sha = hash, required = false });
                                 }
-                                if (readmode == "resource")
+                                hashes.Add(splitline[0], new SHAMod { sha = hash, required = true });
+                            }
+                            if (readmode == "optional-files")
+                            {
+                                splitline = line.Split('=');
+                                string hash = "";
+                                splitline[0] = line;
+                                if (line.Contains('=')) //Let's make the = on the end of the lines optional
                                 {
-                                    resources.Add(line);
+                                    splitline = line.Split('=');
+                                    if (splitline.Length > 1)
+                                    {
+                                        hash = splitline[1];
+                                    }
                                 }
-                                if (readmode == "required")
-                                {
-                                    modList.Add(line);
-                                }
+                                hashes.Add(splitline[0], new SHAMod { sha = hash, required = false });
+                            }
+                            if (readmode == "resource")
+                            {
+                                resources.Add(line);
+                            }
+                            if (readmode == "required")
+                            {
+                                modList.Add(line);
                             }
                         }
                     }
-                    catch (Exception e)
-                    {
-                        Log.Info(e.ToString());
-                    }
-
                 }
                 partList = allowedParts; //make all the vars global once we're done parsing
                 modFileList = hashes;
@@ -377,8 +369,6 @@ namespace KMP
         
         private static bool FileCheck()
         {
-            try
-            {
                 //If required, check exists and same hash
                 foreach (KeyValuePair<string, SHAMod> entry in modFileList.Where(x => x.Value.required == true))
                 {
@@ -409,8 +399,6 @@ namespace KMP
                         }
                         if (entry.Value.sha != "")
                         {
-                            try
-                            {
                                 using (System.IO.Stream hashStream = new System.IO.FileStream(fileToCheck, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
                                 {
                                     using (SHA256Managed sha = new SHA256Managed())
@@ -424,15 +412,8 @@ namespace KMP
                                     }
                                 }
                             }
-                            catch (Exception e)
-                            {
-                                Log.Debug("Failed to hash: " + entry.Key + ", exception" + e.Message.ToString());
-                                modMismatchError = "Failed to hash: " + entry.Key;
-                                return false;
-                            }
                         }
                     }
-                }
                 //If optional, if exists check hash
                 foreach (KeyValuePair<string, SHAMod> entry in modFileList.Where(x => x.Value.required == false))
                 {
@@ -465,14 +446,8 @@ namespace KMP
                                 }
                             }
                         }
-                    }
+
                 }
-            }
-            catch (Exception e)
-            {
-                Log.Debug("Failed to complete files check: " + e.ToString());
-                modMismatchError = e.Message;
-                return false;
             }
             return true;
         }
@@ -2130,7 +2105,7 @@ namespace KMP
 
         private static void ReceiveCallback(IAsyncResult ar)
         {
-			try {
+            try {
 				// Retrieve the state object and the client socket 
 				// from the asynchronous state object.
 				StateObject state = (StateObject)ar.AsyncState;
@@ -2369,19 +2344,13 @@ namespace KMP
 					}
 				}
 			}
-			// Socket closed or not connected.
-			catch (System.InvalidOperationException e)
+			catch (Exception e)
 			{
 				Log.Debug("Exception thrown in sendOutgoingMessages(), catch 1, Exception: {0}", e.ToString());
-			}
-			// Raised by BeginWrite, can mean socket is down.
-			catch (System.IO.IOException e)
-			{
-				Log.Debug("Exception thrown in sendOutgoingMessages(), catch 2, Exception: {0}", e.ToString());
-			}
-			catch (System.NullReferenceException e)
-			{
-				Log.Debug("Exception thrown in sendOutgoingMessages(), catch 3, Exception: {0}", e.ToString());
+                if (gameManager.gameRunning)
+                {
+                    gameManager.disconnect("Connection error: " + e);
+                }
 			}
 		
 		}
@@ -2418,7 +2387,7 @@ namespace KMP
 			{
 				Log.Debug("Exception thrown in asyncTCPSend(), catch 1, Exception: {0}", e.ToString());
 				if (gameManager.gameRunning) { //We have already been disconnected
-					gameManager.disconnect ("Disconnected: Send Error");
+                    gameManager.disconnect("Connection error: " + e.Message.ToString());
 				}
 			}
 		}
@@ -2459,20 +2428,12 @@ namespace KMP
 				}
 			}
 			// Socket closed or not connected.
-			catch (System.InvalidOperationException e)
+			catch (Exception e)
 			{
+                //We really don't care about UDP throwing. It throws when it likes.
 				Log.Debug("Exception thrown in sendOutgoingUDPMessages(), catch 1, Exception: {0}", e.ToString());
+                udpConnected = false;
 			}
-			// Raised by BeginWrite, can mean socket is down.
-			catch (System.IO.IOException e)
-			{
-				Log.Debug("Exception thrown in sendOutgoingUDPMessages(), catch 2, Exception: {0}", e.ToString());
-			}
-			catch (System.NullReferenceException e)
-			{
-				Log.Debug("Exception thrown in sendOutgoingUDPMessages(), catch 3, Exception: {0}", e.ToString());
-			}
-
 		}
 
 		private static void asyncUDPSend(IAsyncResult result)
