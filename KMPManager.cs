@@ -117,6 +117,7 @@ namespace KMP
 		public const float IDLE_DELAY = 120.0f;
 		public const float PLUGIN_DATA_WRITE_INTERVAL = 0.333f;
 		public const float GLOBAL_SETTINGS_SAVE_INTERVAL = 10.0f;
+        public const float SPACE_OBJECT_CHECK_INTERVAL = 1f;
         public const double MIN_SAFETY_BUBBLE_DISTANCE = 100d;
         public const double SAFETY_BUBBLE_CEILING = 35000d;
 		public const float SCENARIO_UPDATE_INTERVAL = 30.0f;
@@ -172,6 +173,7 @@ namespace KMP
 		private float lastScenarioUpdateTime = 0.0f;
 		private float lastTimeSyncTime = 0.0f;
 		public float lastSubspaceLockChange = 0.0f;
+        public float lastSpaceObjectCheck = 0.0f;
 
 		//NTP-style time syncronize settings
 		private bool isSkewingTime = false;
@@ -443,11 +445,13 @@ namespace KMP
 					writeUpdates();
 					return;
 				}
-                
-                foreach (Vessel vessel in FlightGlobals.Vessels.Where(v => v.vesselType == VesselType.SpaceObject && !serverVessels_RemoteID.ContainsKey(v.id)))
-                {
-                    Log.Debug("New space object!");
-                    sendVesselMessage(vessel, false);
+                if ((UnityEngine.Time.realtimeSinceStartup - lastSpaceObjectCheck) >= SPACE_OBJECT_CHECK_INTERVAL) {
+                    lastSpaceObjectCheck = UnityEngine.Time.realtimeSinceStartup;
+                    foreach (Vessel vessel in FlightGlobals.Vessels.Where(v => v.vesselType == VesselType.SpaceObject && !serverVessels_RemoteID.ContainsKey(v.id)))
+                    {
+                        Log.Debug("New space object!");
+                        sendVesselMessage(vessel, false);
+                    }
                 }
 				
 				if (EditorPartList.Instance != null && clearEditorPartList)
