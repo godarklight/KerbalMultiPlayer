@@ -3667,63 +3667,44 @@ namespace KMP
 			InputLockManager.RemoveControlLock("Flag_NoInterruptWhileDeploying");
 		}
 
-		private void krakensBaneWarp(double krakensTick = 0) {
-			if (warping) return;
-		try
-		{
-			double currentTick = Planetarium.GetUniversalTime();
-			//Let SkewTime handle errors smaller than 5s.
-			if (isInFlight && Math.Abs(krakensTick - currentTick) > 5d)
-			{
-				Log.Debug("Syncing to new time " + krakensTick + " from " + Planetarium.GetUniversalTime());
-				if (FlightGlobals.ActiveVessel.situation != Vessel.Situations.PRELAUNCH
-				    && FlightGlobals.ActiveVessel.situation != Vessel.Situations.LANDED
-				    && FlightGlobals.ActiveVessel.situation != Vessel.Situations.SPLASHED)
-				{
-					Vector3d oldObtVel = FlightGlobals.ActiveVessel.obt_velocity;
-					if (FlightGlobals.ActiveVessel.orbit.EndUT > 0)
-					{
-						double lastEndUT =  FlightGlobals.ActiveVessel.orbit.EndUT;
-						while (FlightGlobals.ActiveVessel.orbit.EndUT > 0
-						       && FlightGlobals.ActiveVessel.orbit.EndUT < krakensTick
-						       && FlightGlobals.ActiveVessel.orbit.EndUT > lastEndUT
-						       && FlightGlobals.ActiveVessel.orbit.nextPatch != null)
-						{
-							Log.Debug("orbit EndUT < target: " + FlightGlobals.ActiveVessel.orbit.EndUT + " vs " + krakensTick);
-							lastEndUT =  FlightGlobals.ActiveVessel.orbit.EndUT;
-							FlightGlobals.ActiveVessel.orbitDriver.orbit = FlightGlobals.ActiveVessel.orbit.nextPatch;
-							FlightGlobals.ActiveVessel.orbitDriver.UpdateOrbit();
-							if (FlightGlobals.ActiveVessel.orbit.referenceBody == null) FlightGlobals.ActiveVessel.orbit.referenceBody = FlightGlobals.Bodies.Find(b => b.name == "Sun");
-							Log.Debug("updated to next patch");
-						}
-					}
-					try
-					{
-						OrbitPhysicsManager.HoldVesselUnpack(1);
-					}
-					catch (NullReferenceException e)
-					{
-						Log.Debug("Exception thrown in updateStep(), catch 2, Exception: {0}", e.ToString());
-					}
-					//Krakensbane shift to new orbital location
-					if (Math.Abs(krakensTick - currentTick) > 2.5d //if badly out of sync
-					    && !(FlightGlobals.ActiveVessel.orbit.referenceBody.atmosphere && FlightGlobals.ActiveVessel.orbit.altitude < FlightGlobals.ActiveVessel.orbit.referenceBody.maxAtmosphereAltitude)) //and not in atmo
-					{
-						Log.Debug("Krakensbane shift");
-						Vector3d diffPos = FlightGlobals.ActiveVessel.orbit.getPositionAtUT(krakensTick) - FlightGlobals.ship_position;
-						foreach (Vessel otherVessel in FlightGlobals.Vessels.Where(v => v.packed == false && (v.id != FlightGlobals.ActiveVessel.id || (v.loaded && Vector3d.Distance(FlightGlobals.ship_position,v.GetWorldPos3D()) < INACTIVE_VESSEL_RANGE))))
-							otherVessel.GoOnRails();
-						getKrakensbane().setOffset(diffPos);
-						//Update velocity
-						FlightGlobals.ActiveVessel.ChangeWorldVelocity((-1 * oldObtVel) + FlightGlobals.ActiveVessel.orbitDriver.orbit.getOrbitalVelocityAtUT(krakensTick).xzy);
-						FlightGlobals.ActiveVessel.orbitDriver.vel = FlightGlobals.ActiveVessel.orbit.vel;
-					}
-				}
-				Planetarium.SetUniversalTime(krakensTick);
-				Log.Debug("sync completed");
-			}
-		} catch (Exception e) { Log.Debug("Exception thrown in krakensBaneWarp(), catch 1, Exception: {0}", e.ToString()); Log.Debug("error during sync: " + e.Message + " " + e.StackTrace); }
-		}
+        private void krakensBaneWarp(double newTick)
+        {
+            if (warping)
+            {
+                return;
+            }
+
+            //Warp our vessel if we are orbital.
+
+            bool putActiveVesselOnRails = false;
+            if (isInFlight && FlightGlobals.ActiveVessel != null)
+            {
+                putActiveVesselOnRails = KMPVessel.situationIsOrbital((Situation)FlightGlobals.ActiveVessel.situation);
+            }
+
+            //Prevent vessel unpacks for 1 update
+            try
+            {
+                OrbitPhysicsManager.HoldVesselUnpack(1);
+            }
+            catch
+            {
+            }
+
+            //Put all the other vessels on rails
+            foreach (Vessel vessel in FlightGlobals.Vessels.Where(v => v.packed == false))
+            {
+                if (FlightGlobals.ActiveVessel != vessel || putActiveVesselOnRails)
+                {
+                    vessel.GoOnRails();
+                }
+            }
+
+            //Set the time
+            Planetarium.SetUniversalTime(newTick);
+        }
+
+
 
 		private void SkewTime()
 		{
