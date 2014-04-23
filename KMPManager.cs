@@ -231,6 +231,7 @@ namespace KMP
 		public Dictionary<Guid, int> serverVessels_PartCounts = new Dictionary<Guid, int>();
 		public Dictionary<Guid, List<Part>> serverVessels_Parts = new Dictionary<Guid, List<Part>>();
 		public Dictionary<Guid, ConfigNode> serverVessels_ProtoVessels = new Dictionary<Guid, ConfigNode>();
+        public Dictionary<int, string> serverKerbals_AssignedKerbals = new Dictionary<int, string>();
 		
 		public Dictionary<Guid, bool> serverVessels_InUse = new Dictionary<Guid, bool>();
 		public Dictionary<Guid, bool> serverVessels_IsPrivate = new Dictionary<Guid, bool>();
@@ -2659,9 +2660,32 @@ namespace KMP
 		
 			foreach (ConfigNode partNode in protoNode.GetNodes("PART"))
 			{
+                int currentCrewIndex = 0;
 				foreach (string crew in partNode.GetValues("crew"))
 				{
+                    string protoVesselID = partNode.GetValue("pid");
 					int crewValue = Convert.ToInt32(crew);
+                    if (serverKerbals_AssignedKerbals.ContainsKey(crewValue))
+                    {
+                        if (serverKerbals_AssignedKerbals[crewValue] != protoVesselID)
+                        {
+                            //Assign a new kerbal, this one already belongs to another ship.
+                            int freeKerbal = 0;
+                            while (serverKerbals_AssignedKerbals.ContainsKey(freeKerbal))
+                            {
+                                freeKerbal++;
+                            }
+                            partNode.SetValue("crew", freeKerbal.ToString(), currentCrewIndex);
+                            Log.Debug("Fixing duplicate kerbal reference, changing kerbal " + currentCrewIndex + " to " + freeKerbal);
+                            crewValue = freeKerbal;
+                            currentCrewIndex++;
+                        }
+                    }
+                    else
+                    {
+                        serverKerbals_AssignedKerbals[crewValue] = protoVesselID;
+                    }
+
 					crewValue++;
 					if (crewValue > applicants)
 					{
@@ -4746,6 +4770,7 @@ namespace KMP
 					serverVessels_PartCounts.Clear();
 					serverVessels_Parts.Clear();
 					serverVessels_ProtoVessels.Clear();
+                serverKerbals_AssignedKerbals.Clear();
 					
 					serverVessels_InUse.Clear();
 					serverVessels_IsPrivate.Clear();
