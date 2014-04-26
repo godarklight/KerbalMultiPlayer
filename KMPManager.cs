@@ -113,7 +113,7 @@ namespace KMP
 		public const int MAX_INACTIVE_VESSELS_PER_UPDATE = 16;
 		public const int STATUS_ARRAY_MIN_SIZE = 2;
 		public const int MAX_VESSEL_NAME_LENGTH = 32;
-		public const float VESSEL_TIMEOUT_DELAY = 6.0f;
+		public const float VESSEL_TIMEOUT_DELAY = 10.0f;
 		public const float IDLE_DELAY = 120.0f;
 		public const float PLUGIN_DATA_WRITE_INTERVAL = 0.333f;
 		public const float GLOBAL_SETTINGS_SAVE_INTERVAL = 10.0f;
@@ -2081,6 +2081,10 @@ namespace KMP
                 return;
             }
 
+            if (isObserving && (FlightGlobals.ActiveVessel != null ? FlightGlobals.ActiveVessel.id.ToString() == vessel_update.id.ToString() : false)) {
+                Log.Debug("Skipping update for active vessel - We are not spectating");
+            }
+
 			serverVessels_RemoteID[vessel_update.id] = vessel_update.kmpID;
 			
 			//Find the CelestialBody that matches the one in the update
@@ -2323,15 +2327,17 @@ namespace KMP
 															{
 																//Set velocity by surface velocity
 																Vector3d new_srf_vel = new Vector3d(vessel_update.s_vel[0],vessel_update.s_vel[1],vessel_update.s_vel[2]);
-																if (new_srf_vel.sqrMagnitude>1d) extant_vessel.ChangeWorldVelocity((-1 * extant_vessel.srf_velocity) + new_srf_vel);
-																else extant_vessel.ChangeWorldVelocity(-0.99f * extant_vessel.srf_velocity);
+                                                            extant_vessel.ChangeWorldVelocity(new_srf_vel - extant_vessel.srf_velocity);
+																//if (new_srf_vel.sqrMagnitude>1d) extant_vessel.ChangeWorldVelocity((-1 * extant_vessel.srf_velocity) + new_srf_vel);
+																//else extant_vessel.ChangeWorldVelocity(-0.99f * extant_vessel.srf_velocity);
 															}
 															else
 															{
 																//Set velocity by orbit velocity
 																Vector3d new_obt_vel = new Vector3d(vessel_update.o_vel[0],vessel_update.o_vel[1],vessel_update.o_vel[2]);
-																if (new_obt_vel.sqrMagnitude>1d) extant_vessel.ChangeWorldVelocity((-1 * extant_vessel.obt_velocity) + new_obt_vel);
-																else extant_vessel.ChangeWorldVelocity(-0.99f * extant_vessel.obt_velocity);
+                                                            extant_vessel.ChangeWorldVelocity(new_obt_vel - extant_vessel.obt_velocity);
+																//if (new_obt_vel.sqrMagnitude>1d) extant_vessel.ChangeWorldVelocity((-1 * extant_vessel.obt_velocity) + new_obt_vel);
+																//else extant_vessel.ChangeWorldVelocity(-0.99f * extant_vessel.obt_velocity);
 															}
 														}
 														
@@ -2998,7 +3004,7 @@ namespace KMP
 							Log.Debug("Preparing active vessel for replacement");
                             Vessel SyncPlate = FlightGlobals.fetch.vessels.Find(v => v.id.ToString() == SYNC_PLATE_ID);
                             if (SyncPlate != null) {
-                                FlightGlobals.SetActiveVessel(SyncPlate);
+                                //FlightGlobals.ForceSetActiveVessel(SyncPlate);
                             } else
                             {
                                 Log.Debug("Cannot set SyncPlate as active vessel!");
@@ -3027,6 +3033,11 @@ namespace KMP
 		private IEnumerator<WaitForFixedUpdate> loadProtovessel(Vessel oldVessel, Vector3 newWorldPos, Vector3 newOrbitVel, bool wasLoaded, bool wasActive, bool setTarget, ProtoVessel protovessel, Guid vessel_id, KMPVessel kvessel, KMPVesselUpdate update, double distance)
 		{
 			yield return new WaitForFixedUpdate();
+            if (wasActive)
+            {
+                Log.Debug("Ignoring proto-update for active vessel - Dodgy workaround for the stream!");
+                yield break;
+            }
             Log.Debug("Loading protovessel: {0}", vessel_id.ToString() + ", name: " + protovessel.vesselName + ", type: " + protovessel.vesselType);
             if (oldVessel != null && !wasActive)
             {
