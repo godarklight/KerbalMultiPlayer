@@ -2081,7 +2081,7 @@ namespace KMP
                 return;
             }
 
-            if (isObserving && (FlightGlobals.ActiveVessel != null ? FlightGlobals.ActiveVessel.id.ToString() == vessel_update.id.ToString() : false)) {
+            if (!isObserving && (FlightGlobals.ActiveVessel != null ? FlightGlobals.ActiveVessel.id.ToString() == vessel_update.id.ToString() : false)) {
                 Log.Debug("Skipping update for active vessel - We are not spectating");
             }
 
