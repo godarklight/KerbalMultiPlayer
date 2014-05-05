@@ -1,0 +1,107 @@
+pid = 14ccd14d32d34f51a021cb020ca9cbfe
+name = SyncPlate
+type = Debris
+sit = ORBITING
+landed = False
+landedAt = 
+splashed = False
+met = 18746977.6555335
+lct = 1132.4124261467
+root = 0
+lat = -1.66462844509971E-14
+lon = -19.9134784940403
+alt = 2868240.65692751
+hgt = -1
+nrm = -0.006562376,0.7286798,0.684823
+rot = 0.3681876,-0.3721739,0.6044182,-0.6005024
+CoM = 3.637865E-12,6.427584E-15,2.802099E-14
+stg = 0
+prst = False
+ref = 0
+cPch = 0.2
+cHdg = 0.3
+cMod = 0
+ORBIT
+{
+	SMA = 3468266.5241199
+	ECC = 1.04078261750931E-05
+	INC = 0
+	LPE = 144.361650751271
+	LAN = 230.000534653465
+	MNA = 0.771877196227636
+	EPH = 18748110.0879597
+	REF = 1
+}
+PART
+{
+	name = structuralPanel1
+	uid = 602346932
+	mid = 4157829388
+	parent = 0
+	position = 0,0,0
+	rotation = 0,0,0,1
+	mirror = 1,1,1
+	istg = 0
+	dstg = 0
+	sqor = -1
+	sidx = -1
+	attm = 0
+	srfN = None, -1
+	attN = None, -1
+	attN = None, -1
+	mass = 1E-05
+	temp = -39.32458
+	expt = 0
+	state = 0
+	connected = True
+	attached = True
+	flag = Squad/Flags/default
+	rTrf = structuralPanel1 (SyncPlate)
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+}
+ACTIONGROUPS
+{
+	Stage = False, 0
+	Gear = True, 0
+	Light = False, 0
+	RCS = False, 0
+	SAS = False, 0
+	Brakes = False, 0
+	Abort = False, 0
+	Custom01 = False, 0
+	Custom02 = False, 0
+	Custom03 = False, 0
+	Custom04 = False, 0
+	Custom05 = False, 0
+	Custom06 = False, 0
+	Custom07 = False, 0
+	Custom08 = False, 0
+	Custom09 = False, 0
+	Custom10 = False, 0
+}
+DISCOVERY
+{
+	state = -1
+	lastObservedTime = 0
+	lifetime = Infinity
+	refTime = Infinity
+	size = 2
+}
+FLIGHTPLAN
+{
+}
+CTRLSTATE
+{
+	pitch = 0
+	yaw = 0
+	roll = 0
+	trimPitch = 0
+	trimYaw = 0
+	trimRoll = 0
+	mainThrottle = 0
+} 

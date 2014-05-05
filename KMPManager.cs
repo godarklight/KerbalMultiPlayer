@@ -719,7 +719,7 @@ namespace KMP
 				}
 			}	
 		}
-		
+		/*
 		private void dockedKickToTrackingStation()
 		{
 			if (syncing && docking)
@@ -730,7 +730,7 @@ namespace KMP
 				Invoke("OnFirstFlightReady",1f);
 			}
 		}
-		
+		*/
 		private void kickToTrackingStation()
 		{
 			if (!syncing)
@@ -4951,8 +4951,20 @@ namespace KMP
 					if (GameSettings.PHYSICS_FRAME_DT_LIMIT == 1.0f) {
 						GameSettings.PHYSICS_FRAME_DT_LIMIT = 0.04f;
 					}
+                HighLogic.CurrentGame = new Game();
+                HighLogic.CurrentGame.CrewRoster = new CrewRoster();
+                HighLogic.CurrentGame.flightState = new FlightState();
+                HighLogic.CurrentGame.startScene = GameScenes.FLIGHT;
+                HighLogic.CurrentGame.flightState.activeVesselIdx = 0;
+                ConfigNode syncPlateNode = ConfigNode.Load(System.IO.Path.Combine(KSPUtil.ApplicationRootPath, System.IO.Path.Combine("saves", System.IO.Path.Combine("KMP", "syncplate.sfs"))));
+                ProtoVessel syncPlateProtoVessel = new ProtoVessel(syncPlateNode, HighLogic.CurrentGame);
+                /*
+                syncPlateProtoVessel.Load(HighLogic.CurrentGame.flightState);
+                */
+                HighLogic.CurrentGame.flightState.protoVessels.Add(syncPlateProtoVessel);
+                Log.Debug("Loaded " + syncPlateProtoVessel.vesselID + ", name: " + syncPlateProtoVessel.vesselName);
 					HighLogic.SaveFolder = "KMP";
-					HighLogic.CurrentGame = GamePersistence.LoadGame("start",HighLogic.SaveFolder,false,true);
+					//HighLogic.CurrentGame = GamePersistence.LoadGame("start",HighLogic.SaveFolder,false,true);
 					HighLogic.CurrentGame.Parameters.Flight.CanAutoSave = false;
 					HighLogic.CurrentGame.Parameters.Flight.CanLeaveToEditor = false;
 					HighLogic.CurrentGame.Parameters.Flight.CanLeaveToMainMenu = false;
